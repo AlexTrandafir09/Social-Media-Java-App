@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/socialmediaapp
-    username: devuser
-    password: devpass
+    username: ${DB_USERNAME:devuser}
+    password: ${DB_PASSWORD:devpass}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
