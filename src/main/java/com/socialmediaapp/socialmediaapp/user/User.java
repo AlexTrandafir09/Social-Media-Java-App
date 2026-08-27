@@ -50,6 +50,9 @@ public class User {
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 
+    @OneToOne(mappedBy = "user")
+    private UserPreference preference;
+
     @PrePersist
     void onCreate() {
         this.createdAt = Instant.now();
