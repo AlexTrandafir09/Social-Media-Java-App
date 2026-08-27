@@ -1,6 +1,6 @@
 package com.socialmediaapp.socialmediaapp.content;
 
-import com.socialmediaapp.socialmediaapp.user.User;
+import com.socialmediaapp.socialmediaapp.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

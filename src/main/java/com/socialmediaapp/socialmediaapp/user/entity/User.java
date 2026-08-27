@@ -1,5 +1,6 @@
-package com.socialmediaapp.socialmediaapp.user;
+package com.socialmediaapp.socialmediaapp.user.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -37,10 +38,8 @@ public class User {
 
     @NotBlank
     @Column(nullable = false)
+    @JsonIgnore
     private String password;
-
-    @Size(max = 50)
-    private String displayName;
 
     @Size(max = 280)
     private String bio;

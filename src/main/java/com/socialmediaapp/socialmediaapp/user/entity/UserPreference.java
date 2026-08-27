@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.user;
+package com.socialmediaapp.socialmediaapp.user.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
