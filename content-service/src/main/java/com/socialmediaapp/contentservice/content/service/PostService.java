@@ -85,7 +85,7 @@ public class PostService {
 
     @Transactional(readOnly = true)
     public List<Post> getPostsByAuthor(Long authorId) {
-        return postRepository.findByAuthorId(authorId);
+        return postRepository.findByAuthorIdOrderByCreatedAtDesc(authorId);
     }
 
     public Post updatePost(Long id, PostUpdateRequest request) {

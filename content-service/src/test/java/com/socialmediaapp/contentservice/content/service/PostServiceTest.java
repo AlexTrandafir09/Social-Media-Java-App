@@ -131,7 +131,7 @@ class PostServiceTest {
 
     @Test
     void getPostsByAuthor_returnsList() {
-        when(postRepository.findByAuthorId(1L)).thenReturn(List.of(post));
+        when(postRepository.findByAuthorIdOrderByCreatedAtDesc(1L)).thenReturn(List.of(post));
 
         List<Post> result = postService.getPostsByAuthor(1L);
 
