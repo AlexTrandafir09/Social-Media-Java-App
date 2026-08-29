@@ -1,0 +1,44 @@
+server:
+  port: 8090
+
+spring:
+  application:
+    name: gateway
+  cloud:
+    gateway:
+      server:
+        webmvc:
+          routes:
+            - id: follow-service
+              uri: lb://FOLLOW-SERVICE
+              order: 1
+              predicates:
+                - name: Path
+                  args:
+                    pattern: /api/follows/**
+            - id: notification-service
+              uri: lb://NOTIFICATION-SERVICE
+              order: 2
+              predicates:
+                - name: Path
+                  args:
+                    pattern: /api/notifications/**
+            - id: activity-log-service
+              uri: lb://ACTIVITY-LOG-SERVICE
+              order: 3
+              predicates:
+                - name: Path
+                  args:
+                    pattern: /api/activity/**
+            - id: socialmediaapp
+              uri: lb://SOCIALMEDIAAPP
+              order: 100
+              predicates:
+                - name: Path
+                  args:
+                    pattern: /api/**
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
