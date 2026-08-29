@@ -1,0 +1,20 @@
+package com.socialmediaapp.userservice.messaging;
+
+public enum ActivityAction {
+    USER_REGISTERED,
+    USER_DELETED,
+    EMAIL_CHANGED,
+    PASSWORD_CHANGED,
+    POST_CREATED,
+    POST_UPDATED,
+    POST_DELETED,
+    COMMENT_CREATED,
+    COMMENT_UPDATED,
+    COMMENT_DELETED,
+    LIKE_CREATED,
+    LIKE_REMOVED,
+    FOLLOW_CREATED,
+    FOLLOW_REMOVED,
+    POST_IMAGE_ADDED,
+    POST_IMAGE_DELETED
+}
