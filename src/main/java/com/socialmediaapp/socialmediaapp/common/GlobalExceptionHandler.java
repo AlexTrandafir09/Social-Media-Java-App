@@ -9,11 +9,8 @@ import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException
 import com.socialmediaapp.socialmediaapp.security.exception.InvalidCredentialsException;
 import com.socialmediaapp.socialmediaapp.security.exception.InvalidRefreshTokenException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateEmailException;
-import com.socialmediaapp.socialmediaapp.user.exception.DuplicateFollowException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateUsernameException;
-import com.socialmediaapp.socialmediaapp.user.exception.FollowNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.exception.InvalidCurrentPasswordException;
-import com.socialmediaapp.socialmediaapp.user.exception.SelfFollowException;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.exception.UserPreferenceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +33,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             UserNotFoundException.class,
-            FollowNotFoundException.class,
             UserPreferenceNotFoundException.class,
             PostNotFoundException.class,
             CommentNotFoundException.class,
@@ -51,7 +47,6 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             DuplicateUsernameException.class,
             DuplicateEmailException.class,
-            DuplicateFollowException.class,
             DuplicateLikeException.class
     })
     public ResponseEntity<ErrorResponse> handleConflict(RuntimeException ex) {
@@ -61,7 +56,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             InvalidCurrentPasswordException.class,
-            SelfFollowException.class,
             PostMustHaveImageException.class
     })
     public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException ex) {
