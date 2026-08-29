@@ -1,0 +1,15 @@
+app:
+  jwt:
+    secret: ${JWT_SECRET:dev-only-jwt-signing-secret-change-this-before-any-real-deployment-1234567890}
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka}
+
+spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
