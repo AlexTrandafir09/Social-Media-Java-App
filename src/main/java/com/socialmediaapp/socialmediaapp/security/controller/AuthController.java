@@ -1,8 +1,17 @@
-package com.socialmediaapp.socialmediaapp.security;
+package com.socialmediaapp.socialmediaapp.security.controller;
 
+import com.socialmediaapp.socialmediaapp.security.dto.AuthResponse;
+import com.socialmediaapp.socialmediaapp.security.dto.LoginRequest;
+import com.socialmediaapp.socialmediaapp.security.exception.InvalidRefreshTokenException;
+import com.socialmediaapp.socialmediaapp.security.service.AuthService;
+import com.socialmediaapp.socialmediaapp.security.service.JwtService;
+import com.socialmediaapp.socialmediaapp.user.dto.UserRegistrationRequest;
+import com.socialmediaapp.socialmediaapp.user.entity.User;
+import com.socialmediaapp.socialmediaapp.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CookieValue;
@@ -20,6 +29,21 @@ public class AuthController {
 
     private final AuthService authService;
     private final JwtService jwtService;
+    private final UserService userService;
+
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody UserRegistrationRequest request) {
+        User user = User.builder()
+                .username(request.username())
+                .email(request.email())
+                .password(request.password())
+                .build();
+        User created = userService.createUser(user);
+        AuthService.TokenPair tokens = authService.issueTokens(created);
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .header(HttpHeaders.SET_COOKIE, buildRefreshCookie(tokens.refreshToken()).toString())
+                .body(new AuthResponse(tokens.accessToken(), "Bearer", jwtService.getAccessTokenExpirationSeconds()));
+    }
 
     @PostMapping("/login")
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {

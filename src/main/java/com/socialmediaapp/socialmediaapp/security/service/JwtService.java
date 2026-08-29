@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.security;
+package com.socialmediaapp.socialmediaapp.security.service;
 
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import io.jsonwebtoken.Claims;

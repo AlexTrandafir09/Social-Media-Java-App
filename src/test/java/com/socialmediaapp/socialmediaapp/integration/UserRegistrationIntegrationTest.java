@@ -4,11 +4,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -21,18 +24,19 @@ class UserRegistrationIntegrationTest {
     private MockMvc mockMvc;
 
     @Test
-    void register_returnsCreatedUserWithoutPassword() throws Exception {
+    void register_returnsTokensAndSetsRefreshCookie() throws Exception {
         String body = """
                 {"username":"alice","email":"alice@test.com","password":"pass1234"}
                 """;
 
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.username").value("alice"))
-                .andExpect(jsonPath("$.email").value("alice@test.com"))
-                .andExpect(jsonPath("$.password").doesNotExist());
+                .andExpect(jsonPath("$.accessToken").isNotEmpty())
+                .andExpect(jsonPath("$.tokenType").value("Bearer"))
+                .andExpect(header().exists(HttpHeaders.SET_COOKIE))
+                .andExpect(cookie().httpOnly("refreshToken", true));
     }
 
     @Test
@@ -40,7 +44,7 @@ class UserRegistrationIntegrationTest {
         String first = """
                 {"username":"bob","email":"bob@test.com","password":"pass1234"}
                 """;
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(first))
                 .andExpect(status().isCreated());
@@ -48,7 +52,7 @@ class UserRegistrationIntegrationTest {
         String duplicate = """
                 {"username":"bob","email":"other@test.com","password":"pass1234"}
                 """;
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(duplicate))
                 .andExpect(status().isConflict())
@@ -61,7 +65,7 @@ class UserRegistrationIntegrationTest {
                 {"username":"a","email":"not-an-email","password":""}
                 """;
 
-        mockMvc.perform(post("/api/users")
+        mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(invalid))
                 .andExpect(status().isBadRequest())

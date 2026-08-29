@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.security;
+package com.socialmediaapp.socialmediaapp.security.exception;
 
 public class InvalidCredentialsException extends RuntimeException {
 

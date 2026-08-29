@@ -1,5 +1,6 @@
 package com.socialmediaapp.socialmediaapp.security;
 
+import com.socialmediaapp.socialmediaapp.security.service.JwtService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;

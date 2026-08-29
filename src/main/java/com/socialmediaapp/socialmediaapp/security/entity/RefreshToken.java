@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.security;
+package com.socialmediaapp.socialmediaapp.security.entity;
 
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import jakarta.persistence.*;

@@ -3,12 +3,10 @@ package com.socialmediaapp.socialmediaapp.user.controller;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.dto.ChangeEmailRequest;
 import com.socialmediaapp.socialmediaapp.user.dto.ChangePasswordRequest;
-import com.socialmediaapp.socialmediaapp.user.dto.UserRegistrationRequest;
 import com.socialmediaapp.socialmediaapp.user.dto.UserUpdateRequest;
 import com.socialmediaapp.socialmediaapp.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -20,17 +18,6 @@ import java.util.List;
 public class UserController {
 
     private final UserService userService;
-
-    @PostMapping
-    public ResponseEntity<User> createUser(@Valid @RequestBody UserRegistrationRequest request) {
-        User user = User.builder()
-                .username(request.username())
-                .email(request.email())
-                .password(request.password())
-                .build();
-        User created = userService.createUser(user);
-        return ResponseEntity.status(HttpStatus.CREATED).body(created);
-    }
 
     @GetMapping("/{id}")
     public User getUser(@PathVariable Long id) {

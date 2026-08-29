@@ -7,8 +7,8 @@ import com.socialmediaapp.socialmediaapp.content.exception.PostImageNotFoundExce
 import com.socialmediaapp.socialmediaapp.content.exception.PostMustHaveImageException;
 import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
 import com.socialmediaapp.socialmediaapp.notification.exception.NotificationNotFoundException;
-import com.socialmediaapp.socialmediaapp.security.InvalidCredentialsException;
-import com.socialmediaapp.socialmediaapp.security.InvalidRefreshTokenException;
+import com.socialmediaapp.socialmediaapp.security.exception.InvalidCredentialsException;
+import com.socialmediaapp.socialmediaapp.security.exception.InvalidRefreshTokenException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateEmailException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateFollowException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateUsernameException;

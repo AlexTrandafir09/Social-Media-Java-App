@@ -2,7 +2,7 @@ package com.socialmediaapp.socialmediaapp.integration;
 
 import com.socialmediaapp.socialmediaapp.content.entity.Post;
 import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
-import com.socialmediaapp.socialmediaapp.security.JwtService;
+import com.socialmediaapp.socialmediaapp.security.service.JwtService;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;

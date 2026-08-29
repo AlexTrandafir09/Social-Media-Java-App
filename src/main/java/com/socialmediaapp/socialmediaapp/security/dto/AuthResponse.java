@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.security;
+package com.socialmediaapp.socialmediaapp.security.dto;
 
 public record AuthResponse(
         String accessToken,

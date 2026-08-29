@@ -1,5 +1,9 @@
-package com.socialmediaapp.socialmediaapp.security;
+package com.socialmediaapp.socialmediaapp.security.service;
 
+import com.socialmediaapp.socialmediaapp.security.entity.RefreshToken;
+import com.socialmediaapp.socialmediaapp.security.exception.InvalidCredentialsException;
+import com.socialmediaapp.socialmediaapp.security.exception.InvalidRefreshTokenException;
+import com.socialmediaapp.socialmediaapp.security.repository.RefreshTokenRepository;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,7 +35,7 @@ public class AuthService {
             throw new InvalidCredentialsException();
         }
         log.info("User logged in: id={}, username={}", user.getId(), user.getUsername());
-        return issueTokenPair(user);
+        return issueTokens(user);
     }
 
     public TokenPair refresh(String rawRefreshToken) {
@@ -44,7 +48,7 @@ public class AuthService {
         User user = existing.getUser();
         refreshTokenRepository.delete(existing);
         log.debug("Refresh token rotated: userId={}", user.getId());
-        return issueTokenPair(user);
+        return issueTokens(user);
     }
 
     public void logout(String rawRefreshToken) {
@@ -52,7 +56,7 @@ public class AuthService {
                 .ifPresent(refreshTokenRepository::delete);
     }
 
-    private TokenPair issueTokenPair(User user) {
+    public TokenPair issueTokens(User user) {
         String accessToken = jwtService.generateAccessToken(user);
         String rawRefreshToken = jwtService.generateRefreshTokenValue();
         RefreshToken refreshToken = RefreshToken.builder()
