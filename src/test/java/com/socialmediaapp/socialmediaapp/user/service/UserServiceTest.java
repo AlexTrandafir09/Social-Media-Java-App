@@ -1,5 +1,6 @@
 package com.socialmediaapp.socialmediaapp.user.service;
 
+import com.socialmediaapp.socialmediaapp.activity.ActivityLogService;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateEmailException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateUsernameException;
@@ -28,13 +29,19 @@ class UserServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private UserPreferenceService userPreferenceService;
+
+    @Mock
+    private ActivityLogService activityLogService;
+
     private UserService userService;
 
     private User user;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository);
+        userService = new UserService(userRepository, userPreferenceService, activityLogService);
         user = User.builder()
                 .id(1L)
                 .username("alext")
@@ -187,20 +194,20 @@ class UserServiceTest {
 
     @Test
     void deleteUser_deletesWhenUserExists() {
-        when(userRepository.existsById(1L)).thenReturn(true);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
         userService.deleteUser(1L);
 
-        verify(userRepository).deleteById(1L);
+        verify(userRepository).delete(user);
     }
 
     @Test
     void deleteUser_throwsWhenUserDoesNotExist() {
-        when(userRepository.existsById(99L)).thenReturn(false);
+        when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.deleteUser(99L))
                 .isInstanceOf(UserNotFoundException.class);
 
-        verify(userRepository, never()).deleteById(any());
+        verify(userRepository, never()).delete(any());
     }
 }
