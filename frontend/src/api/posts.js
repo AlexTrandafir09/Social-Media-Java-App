@@ -20,6 +20,10 @@ export function createPost(content, images) {
   return apiFetch('/api/posts', { method: 'POST', body: { content, images } })
 }
 
+export function imageUrl(imageId) {
+  return `http://localhost:8090/api/posts/images/${imageId}/file`
+}
+
 export function updatePost(id, content) {
   return apiFetch(`/api/posts/${id}`, { method: 'PUT', body: { content } })
 }

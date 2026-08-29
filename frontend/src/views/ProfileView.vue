@@ -1,10 +1,21 @@
 <script setup>
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getUser, updateUser, changeEmail, changePassword, deleteUser, getPreferences, updatePreferences } from '../api/users'
+import {
+  getUser,
+  updateUser,
+  changeEmail,
+  changePassword,
+  deleteUser,
+  getPreferences,
+  updatePreferences,
+  updateAvatar,
+  avatarUrl,
+} from '../api/users'
 import { getPostsByAuthor } from '../api/posts'
 import { getFollowing, follow, unfollow } from '../api/follows'
 import { authState, clearSession } from '../stores/auth'
+import { fileToBase64 } from '../lib/files'
 import PostCard from '../components/PostCard.vue'
 
 const route = useRoute()
@@ -18,24 +29,28 @@ const posts = ref([])
 const isFollowing = ref(false)
 const apiError = ref('')
 const loading = ref(true)
+const hasAvatar = ref(true)
 
-const profileForm = reactive({ bio: '', avatarUrl: '' })
+const profileForm = reactive({ bio: '' })
 const emailForm = reactive({ newEmail: '' })
 const passwordForm = reactive({ currentPassword: '', newPassword: '' })
 const preferences = reactive({ notifyOnLike: true, notifyOnComment: true, notifyOnFollow: true })
 const fieldErrors = reactive({})
 const savedMessage = ref('')
 
+const avatarFile = ref(null)
+const avatarPreviewUrl = ref('')
+
 async function load() {
   loading.value = true
   apiError.value = ''
+  hasAvatar.value = true
   try {
     user.value = await getUser(profileId.value)
     posts.value = await getPostsByAuthor(profileId.value)
 
     if (isOwnProfile.value) {
       profileForm.bio = user.value.bio || ''
-      profileForm.avatarUrl = user.value.avatarUrl || ''
       const prefs = await getPreferences(profileId.value)
       preferences.notifyOnLike = prefs.notifyOnLike
       preferences.notifyOnComment = prefs.notifyOnComment
@@ -75,8 +90,38 @@ async function saveProfile() {
   fieldErrors.bio = profileForm.bio.length > 280 ? 'Bio must be 280 characters or fewer' : ''
   if (fieldErrors.bio) return
   try {
-    user.value = await updateUser(profileId.value, profileForm.bio, profileForm.avatarUrl)
+    user.value = await updateUser(profileId.value, profileForm.bio)
     savedMessage.value = 'Profile updated'
+  } catch (err) {
+    apiError.value = err.message
+  }
+}
+
+function onAvatarFileChange(event) {
+  const picked = event.target.files[0]
+  if (!picked) return
+  fieldErrors.avatar = picked.type.startsWith('image/') ? '' : 'Please choose an image file'
+  if (fieldErrors.avatar) {
+    avatarFile.value = null
+    avatarPreviewUrl.value = ''
+    return
+  }
+  avatarFile.value = picked
+  avatarPreviewUrl.value = URL.createObjectURL(picked)
+}
+
+async function saveAvatar() {
+  if (!avatarFile.value) {
+    fieldErrors.avatar = 'Choose an image first'
+    return
+  }
+  try {
+    const data = await fileToBase64(avatarFile.value)
+    await updateAvatar(profileId.value, avatarFile.value.type, data)
+    hasAvatar.value = true
+    avatarFile.value = null
+    avatarPreviewUrl.value = ''
+    savedMessage.value = 'Avatar updated'
   } catch (err) {
     apiError.value = err.message
   }
@@ -131,6 +176,7 @@ async function removeAccount() {
   <div v-if="loading">Loading...</div>
   <p v-else-if="apiError" class="error-banner">{{ apiError }}</p>
   <div v-else-if="user">
+    <img v-if="hasAvatar" :src="avatarUrl(user.id)" class="avatar" @error="hasAvatar = false" />
     <h1>{{ user.username }}</h1>
     <p v-if="user.bio">{{ user.bio }}</p>
     <p v-if="savedMessage" class="hint">{{ savedMessage }}</p>
@@ -142,8 +188,15 @@ async function removeAccount() {
       <form class="auth-form" @submit.prevent="saveProfile">
         <label>Bio <textarea v-model="profileForm.bio" rows="3"></textarea></label>
         <p v-if="fieldErrors.bio" class="field-error">{{ fieldErrors.bio }}</p>
-        <label>Avatar URL <input v-model="profileForm.avatarUrl" type="text" /></label>
         <button type="submit">Save profile</button>
+      </form>
+
+      <h2>Avatar</h2>
+      <form class="auth-form" @submit.prevent="saveAvatar">
+        <label>Choose image <input type="file" accept="image/*" @change="onAvatarFileChange" /></label>
+        <p v-if="fieldErrors.avatar" class="field-error">{{ fieldErrors.avatar }}</p>
+        <img v-if="avatarPreviewUrl" :src="avatarPreviewUrl" class="image-preview" />
+        <button type="submit">Upload avatar</button>
       </form>
 
       <h2>Change email</h2>

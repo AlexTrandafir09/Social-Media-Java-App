@@ -8,8 +8,8 @@ export function getAllUsers() {
   return apiFetch('/api/users')
 }
 
-export function updateUser(id, bio, avatarUrl) {
-  return apiFetch(`/api/users/${id}`, { method: 'PUT', body: { bio, avatarUrl } })
+export function updateUser(id, bio) {
+  return apiFetch(`/api/users/${id}`, { method: 'PUT', body: { bio } })
 }
 
 export function changeEmail(id, newEmail) {
@@ -21,6 +21,14 @@ export function changePassword(id, currentPassword, newPassword) {
     method: 'PATCH',
     body: { currentPassword, newPassword },
   })
+}
+
+export function updateAvatar(id, contentType, data) {
+  return apiFetch(`/api/users/${id}/avatar`, { method: 'PUT', body: { contentType, data } })
+}
+
+export function avatarUrl(id) {
+  return `http://localhost:8090/api/users/${id}/avatar/file`
 }
 
 export function deleteUser(id) {

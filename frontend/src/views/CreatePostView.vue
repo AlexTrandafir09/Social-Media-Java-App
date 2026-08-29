@@ -2,12 +2,29 @@
 import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { createPost } from '../api/posts'
+import { fileToBase64 } from '../lib/files'
 
 const router = useRouter()
-const form = reactive({ content: '', storageKey: '' })
+const form = reactive({ content: '' })
 const fieldErrors = reactive({})
 const apiError = ref('')
 const submitting = ref(false)
+
+const file = ref(null)
+const previewUrl = ref('')
+
+function onFileChange(event) {
+  const picked = event.target.files[0]
+  if (!picked) return
+  fieldErrors.file = picked.type.startsWith('image/') ? '' : 'Please choose an image file'
+  if (fieldErrors.file) {
+    file.value = null
+    previewUrl.value = ''
+    return
+  }
+  file.value = picked
+  previewUrl.value = URL.createObjectURL(picked)
+}
 
 function validate() {
   fieldErrors.content =
@@ -16,8 +33,8 @@ function validate() {
       : form.content.length > 2000
         ? 'Content must be 2000 characters or fewer'
         : ''
-  fieldErrors.storageKey = form.storageKey.length === 0 ? 'A post needs at least one image' : ''
-  return !fieldErrors.content && !fieldErrors.storageKey
+  fieldErrors.file = file.value ? '' : 'A post needs an image'
+  return !fieldErrors.content && !fieldErrors.file
 }
 
 async function onSubmit() {
@@ -25,7 +42,10 @@ async function onSubmit() {
   if (!validate()) return
   submitting.value = true
   try {
-    await createPost(form.content, [{ storageKey: form.storageKey, filter: 'NONE' }])
+    const data = await fileToBase64(file.value)
+    await createPost(form.content, [
+      { storageKey: file.value.name, contentType: file.value.type, data, filter: 'NONE' },
+    ])
     router.push({ name: 'feed' })
   } catch (err) {
     apiError.value = err.message
@@ -47,11 +67,11 @@ async function onSubmit() {
     <p v-if="fieldErrors.content" class="field-error">{{ fieldErrors.content }}</p>
 
     <label>
-      Image storage key
-      <input v-model="form.storageKey" type="text" placeholder="e.g. photo.png" />
+      Image
+      <input type="file" accept="image/*" @change="onFileChange" />
     </label>
-    <p v-if="fieldErrors.storageKey" class="field-error">{{ fieldErrors.storageKey }}</p>
-    <p class="hint">No file upload is wired up yet - this is just an identifier the backend stores.</p>
+    <p v-if="fieldErrors.file" class="field-error">{{ fieldErrors.file }}</p>
+    <img v-if="previewUrl" :src="previewUrl" class="image-preview" />
 
     <button type="submit" :disabled="submitting">Post</button>
   </form>

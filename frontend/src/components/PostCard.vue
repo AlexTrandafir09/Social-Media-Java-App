@@ -1,6 +1,6 @@
 <script setup>
 import { ref } from 'vue'
-import { updatePost, deletePost } from '../api/posts'
+import { updatePost, deletePost, imageUrl } from '../api/posts'
 import { getComments, createComment, updateComment, deleteComment } from '../api/comments'
 import { likePost, unlikePost, getLikesForPost, countLikes } from '../api/likes'
 import { authState } from '../stores/auth'
@@ -141,9 +141,9 @@ function formatDate(iso) {
     </template>
     <p v-else class="post-content">{{ post.content }}</p>
 
-    <ul v-if="post.images?.length" class="post-images">
-      <li v-for="img in post.images" :key="img.id">{{ img.storageKey }} ({{ img.activeFilter }})</li>
-    </ul>
+    <div v-if="post.images?.length" class="post-images">
+      <img v-for="img in post.images" :key="img.id" :src="imageUrl(img.id)" :alt="img.storageKey" />
+    </div>
 
     <div v-if="post.authorId === authState.user.id && !editingPost" class="post-actions">
       <button @click="startEditPost">Edit</button>
