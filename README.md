@@ -1,4 +1,6 @@
-# Database ERD
+# Social Media Java App
+
+## Database ERD
 
 ```mermaid
 %%{init: {
@@ -112,9 +114,9 @@ erDiagram
     }
 ```
 
-## Tables
+### Tables
 
-### users
+#### users
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -126,7 +128,7 @@ erDiagram
 | role | VARCHAR(20) | NOT NULL, `USER` \| `ADMIN` |
 | created_at | TIMESTAMP | NOT NULL |
 
-### user_preferences
+#### user_preferences
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -135,7 +137,7 @@ erDiagram
 | notify_on_comment | BOOLEAN | NOT NULL |
 | notify_on_follow | BOOLEAN | NOT NULL |
 
-### follows
+#### follows
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -145,7 +147,7 @@ erDiagram
 
 UNIQUE (follower_id, following_id)
 
-### posts
+#### posts
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -153,7 +155,7 @@ UNIQUE (follower_id, following_id)
 | user_id | BIGINT | FK → users.id, NOT NULL |
 | created_at | TIMESTAMP | NOT NULL |
 
-### comments
+#### comments
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -162,7 +164,7 @@ UNIQUE (follower_id, following_id)
 | post_id | BIGINT | FK → posts.id, NOT NULL |
 | created_at | TIMESTAMP | NOT NULL |
 
-### likes
+#### likes
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -172,7 +174,7 @@ UNIQUE (follower_id, following_id)
 
 UNIQUE (user_id, post_id)
 
-### post_images
+#### post_images
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -180,7 +182,7 @@ UNIQUE (user_id, post_id)
 | active_filter | VARCHAR(20) | NOT NULL, `NONE` \| `BLACK_AND_WHITE` \| `CONTRAST` \| `SEPIA` \| `VINTAGE` |
 | post_id | BIGINT | FK → posts.id, NOT NULL |
 
-### notifications
+#### notifications
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -191,7 +193,7 @@ UNIQUE (user_id, post_id)
 | read | BOOLEAN | NOT NULL |
 | created_at | TIMESTAMP | NOT NULL |
 
-### activity_logs
+#### activity_logs
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -202,7 +204,7 @@ UNIQUE (user_id, post_id)
 
 `action` values: `USER_REGISTERED`, `USER_DELETED`, `EMAIL_CHANGED`, `PASSWORD_CHANGED`, `POST_CREATED`, `POST_UPDATED`, `POST_DELETED`, `COMMENT_CREATED`, `COMMENT_UPDATED`, `COMMENT_DELETED`, `LIKE_CREATED`, `LIKE_REMOVED`, `FOLLOW_CREATED`, `FOLLOW_REMOVED`, `POST_IMAGE_ADDED`, `POST_IMAGE_DELETED`
 
-### refresh_tokens
+#### refresh_tokens
 | Column | Type | Constraints |
 |---|---|---|
 | id | BIGINT | PK |
@@ -211,7 +213,7 @@ UNIQUE (user_id, post_id)
 | expires_at | TIMESTAMP | NOT NULL |
 | created_at | TIMESTAMP | NOT NULL |
 
-## Relationships
+### Relationships
 
 | From | Cardinality | To |
 |---|---|---|
