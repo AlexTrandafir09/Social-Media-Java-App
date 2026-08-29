@@ -1,6 +1,7 @@
 package com.socialmediaapp.socialmediaapp.user.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +16,7 @@ import java.time.Instant;
 
 @Entity
 @Table(name = "users")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Getter
 @Setter
 @NoArgsConstructor
@@ -48,9 +50,6 @@ public class User {
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
-
-    @OneToOne(mappedBy = "user")
-    private UserPreference preference;
 
     @PrePersist
     void onCreate() {
