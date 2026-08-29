@@ -26,11 +26,6 @@ public class CommentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(comment);
     }
 
-    @GetMapping("/{id}")
-    public Comment getComment(@PathVariable Long id) {
-        return commentService.getCommentById(id);
-    }
-
     @GetMapping("/post/{postId}")
     public Page<Comment> getCommentsForPost(@PathVariable Long postId,
                                              @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
