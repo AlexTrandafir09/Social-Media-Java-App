@@ -1,0 +1,14 @@
+services:
+  follow-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-devuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-devpass}
+      POSTGRES_DB: followservice
+    ports:
+      - "5435:5432"
+    volumes:
+      - follow-db-data:/var/lib/postgresql/data
+
+volumes:
+  follow-db-data:
