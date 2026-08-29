@@ -23,7 +23,9 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -56,7 +58,7 @@ public class PostService {
                         .storageKey(img.storageKey())
                         .activeFilter(img.filter() != null ? img.filter() : ImageFilter.NONE)
                         .build())
-                .toList();
+                .collect(Collectors.toCollection(ArrayList::new));
         postImageRepository.saveAll(images);
         savedPost.setImages(images);
         activityLogService.record(author, ActivityAction.POST_CREATED, "Post created: " + savedPost.getId());
