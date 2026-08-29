@@ -1,6 +1,14 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.service;
 
 import com.socialmediaapp.socialmediaapp.activity.ActivityLogService;
+import com.socialmediaapp.socialmediaapp.content.dto.CommentCreateRequest;
+import com.socialmediaapp.socialmediaapp.content.dto.CommentUpdateRequest;
+import com.socialmediaapp.socialmediaapp.content.entity.Comment;
+import com.socialmediaapp.socialmediaapp.content.entity.Post;
+import com.socialmediaapp.socialmediaapp.content.exception.CommentNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.repository.CommentRepository;
+import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;

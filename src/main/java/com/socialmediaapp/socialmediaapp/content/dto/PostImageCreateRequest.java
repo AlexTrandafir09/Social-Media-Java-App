@@ -1,5 +1,6 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.dto;
 
+import com.socialmediaapp.socialmediaapp.content.entity.ImageFilter;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 

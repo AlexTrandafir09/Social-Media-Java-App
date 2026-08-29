@@ -1,7 +1,16 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.service;
 
 import com.socialmediaapp.socialmediaapp.activity.ActivityAction;
 import com.socialmediaapp.socialmediaapp.activity.ActivityLogService;
+import com.socialmediaapp.socialmediaapp.content.dto.PostImageCreateRequest;
+import com.socialmediaapp.socialmediaapp.content.dto.PostImageUpdateRequest;
+import com.socialmediaapp.socialmediaapp.content.entity.ImageFilter;
+import com.socialmediaapp.socialmediaapp.content.entity.Post;
+import com.socialmediaapp.socialmediaapp.content.entity.PostImage;
+import com.socialmediaapp.socialmediaapp.content.exception.PostImageNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.repository.PostImageRepository;
+import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,5 +1,9 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.controller;
 
+import com.socialmediaapp.socialmediaapp.content.dto.CommentCreateRequest;
+import com.socialmediaapp.socialmediaapp.content.dto.CommentUpdateRequest;
+import com.socialmediaapp.socialmediaapp.content.entity.Comment;
+import com.socialmediaapp.socialmediaapp.content.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

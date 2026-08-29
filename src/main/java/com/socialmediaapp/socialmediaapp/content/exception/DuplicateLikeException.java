@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.exception;
 
 public class DuplicateLikeException extends RuntimeException {
 

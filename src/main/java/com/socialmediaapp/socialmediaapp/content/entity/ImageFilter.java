@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.entity;
 
 public enum ImageFilter {
     NONE,

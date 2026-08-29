@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.dto;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;

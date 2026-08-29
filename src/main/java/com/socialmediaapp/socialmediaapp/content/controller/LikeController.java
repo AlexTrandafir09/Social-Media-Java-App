@@ -1,5 +1,8 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.controller;
 
+import com.socialmediaapp.socialmediaapp.content.dto.LikeRequest;
+import com.socialmediaapp.socialmediaapp.content.entity.Like;
+import com.socialmediaapp.socialmediaapp.content.service.LikeService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

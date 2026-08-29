@@ -1,5 +1,8 @@
-package com.socialmediaapp.socialmediaapp.notification;
+package com.socialmediaapp.socialmediaapp.notification.controller;
 
+import com.socialmediaapp.socialmediaapp.notification.dto.NotificationCreateRequest;
+import com.socialmediaapp.socialmediaapp.notification.entity.Notification;
+import com.socialmediaapp.socialmediaapp.notification.service.NotificationService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.entity;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.socialmediaapp.socialmediaapp.user.entity.User;

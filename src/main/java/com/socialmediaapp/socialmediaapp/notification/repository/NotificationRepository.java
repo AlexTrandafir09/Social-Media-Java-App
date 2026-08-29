@@ -1,5 +1,6 @@
-package com.socialmediaapp.socialmediaapp.notification;
+package com.socialmediaapp.socialmediaapp.notification.repository;
 
+import com.socialmediaapp.socialmediaapp.notification.entity.Notification;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;

@@ -1,5 +1,9 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.controller;
 
+import com.socialmediaapp.socialmediaapp.content.dto.PostImageCreateRequest;
+import com.socialmediaapp.socialmediaapp.content.dto.PostImageUpdateRequest;
+import com.socialmediaapp.socialmediaapp.content.entity.PostImage;
+import com.socialmediaapp.socialmediaapp.content.service.PostImageService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

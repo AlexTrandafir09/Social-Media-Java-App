@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.notification;
+package com.socialmediaapp.socialmediaapp.notification.exception;
 
 public class NotificationNotFoundException extends RuntimeException {
 

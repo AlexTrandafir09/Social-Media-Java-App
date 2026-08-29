@@ -1,6 +1,13 @@
-package com.socialmediaapp.socialmediaapp.content;
+package com.socialmediaapp.socialmediaapp.content.service;
 
 import com.socialmediaapp.socialmediaapp.activity.ActivityLogService;
+import com.socialmediaapp.socialmediaapp.content.entity.Like;
+import com.socialmediaapp.socialmediaapp.content.entity.Post;
+import com.socialmediaapp.socialmediaapp.content.exception.DuplicateLikeException;
+import com.socialmediaapp.socialmediaapp.content.exception.LikeNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.repository.LikeRepository;
+import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;

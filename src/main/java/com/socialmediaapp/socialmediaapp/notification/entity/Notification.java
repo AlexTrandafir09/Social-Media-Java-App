@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.notification;
+package com.socialmediaapp.socialmediaapp.notification.entity;
 
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import jakarta.persistence.*;

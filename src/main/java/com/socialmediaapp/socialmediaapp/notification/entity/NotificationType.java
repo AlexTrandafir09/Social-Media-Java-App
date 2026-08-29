@@ -1,4 +1,4 @@
-package com.socialmediaapp.socialmediaapp.notification;
+package com.socialmediaapp.socialmediaapp.notification.entity;
 
 public enum NotificationType {
     LIKE,

@@ -1,5 +1,10 @@
-package com.socialmediaapp.socialmediaapp.notification;
+package com.socialmediaapp.socialmediaapp.notification.service;
 
+import com.socialmediaapp.socialmediaapp.notification.dto.NotificationCreateRequest;
+import com.socialmediaapp.socialmediaapp.notification.entity.Notification;
+import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
+import com.socialmediaapp.socialmediaapp.notification.exception.NotificationNotFoundException;
+import com.socialmediaapp.socialmediaapp.notification.repository.NotificationRepository;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;

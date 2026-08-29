@@ -1,12 +1,12 @@
 package com.socialmediaapp.socialmediaapp.common;
 
-import com.socialmediaapp.socialmediaapp.content.CommentNotFoundException;
-import com.socialmediaapp.socialmediaapp.content.DuplicateLikeException;
-import com.socialmediaapp.socialmediaapp.content.LikeNotFoundException;
-import com.socialmediaapp.socialmediaapp.content.PostImageNotFoundException;
-import com.socialmediaapp.socialmediaapp.content.PostMustHaveImageException;
-import com.socialmediaapp.socialmediaapp.content.PostNotFoundException;
-import com.socialmediaapp.socialmediaapp.notification.NotificationNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.exception.CommentNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.exception.DuplicateLikeException;
+import com.socialmediaapp.socialmediaapp.content.exception.LikeNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.exception.PostImageNotFoundException;
+import com.socialmediaapp.socialmediaapp.content.exception.PostMustHaveImageException;
+import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
+import com.socialmediaapp.socialmediaapp.notification.exception.NotificationNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateEmailException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateFollowException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateUsernameException;

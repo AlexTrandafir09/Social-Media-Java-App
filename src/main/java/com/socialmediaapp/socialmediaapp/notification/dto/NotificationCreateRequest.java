@@ -1,5 +1,6 @@
-package com.socialmediaapp.socialmediaapp.notification;
+package com.socialmediaapp.socialmediaapp.notification.dto;
 
+import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
 import jakarta.validation.constraints.NotNull;
 
 public record NotificationCreateRequest(
