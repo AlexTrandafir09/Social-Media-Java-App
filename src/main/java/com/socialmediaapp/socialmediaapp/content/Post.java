@@ -1,5 +1,6 @@
 package com.socialmediaapp.socialmediaapp.content;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Entity
 @Table(name = "posts")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 @Getter
 @Setter
 @NoArgsConstructor
