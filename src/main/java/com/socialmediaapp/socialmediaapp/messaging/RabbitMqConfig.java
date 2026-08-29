@@ -17,6 +17,10 @@ public class RabbitMqConfig {
     public static final String NOTIFICATION_QUEUE = "notification.events.queue";
     public static final String NOTIFICATION_ROUTING_KEY = "notification.created";
 
+    public static final String ACTIVITY_EXCHANGE = "activity.exchange";
+    public static final String ACTIVITY_QUEUE = "activity.events.queue";
+    public static final String ACTIVITY_ROUTING_KEY = "activity.recorded";
+
     @Bean
     @Profile("!test")
     public TopicExchange notificationExchange() {
@@ -33,6 +37,24 @@ public class RabbitMqConfig {
     @Profile("!test")
     public Binding notificationBinding(Queue notificationQueue, TopicExchange notificationExchange) {
         return BindingBuilder.bind(notificationQueue).to(notificationExchange).with(NOTIFICATION_ROUTING_KEY);
+    }
+
+    @Bean
+    @Profile("!test")
+    public TopicExchange activityExchange() {
+        return new TopicExchange(ACTIVITY_EXCHANGE, true, false);
+    }
+
+    @Bean
+    @Profile("!test")
+    public Queue activityQueue() {
+        return new Queue(ACTIVITY_QUEUE, true);
+    }
+
+    @Bean
+    @Profile("!test")
+    public Binding activityBinding(Queue activityQueue, TopicExchange activityExchange) {
+        return BindingBuilder.bind(activityQueue).to(activityExchange).with(ACTIVITY_ROUTING_KEY);
     }
 
     @Bean
