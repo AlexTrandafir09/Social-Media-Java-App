@@ -2,11 +2,14 @@ package com.socialmediaapp.socialmediaapp.notification.service;
 
 import com.socialmediaapp.socialmediaapp.notification.dto.NotificationCreateRequest;
 import com.socialmediaapp.socialmediaapp.notification.entity.Notification;
+import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
 import com.socialmediaapp.socialmediaapp.notification.exception.NotificationNotFoundException;
 import com.socialmediaapp.socialmediaapp.notification.repository.NotificationRepository;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
+import com.socialmediaapp.socialmediaapp.user.entity.UserPreference;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
+import com.socialmediaapp.socialmediaapp.user.service.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -22,6 +25,7 @@ public class NotificationService {
 
     private final NotificationRepository notificationRepository;
     private final UserRepository userRepository;
+    private final UserPreferenceService userPreferenceService;
 
     public Notification createNotification(NotificationCreateRequest request) {
         User recipient = userRepository.findById(request.recipientId())
@@ -64,5 +68,28 @@ public class NotificationService {
         }
         notificationRepository.deleteById(id);
         log.debug("Notification deleted: id={}", id);
+    }
+
+    public void notifyIfEnabled(User recipient, User actor, NotificationType type, Long referencePostId) {
+        if (recipient.getId().equals(actor.getId())) {
+            return;
+        }
+        UserPreference preference = userPreferenceService.getByUserId(recipient.getId());
+        boolean enabled = switch (type) {
+            case LIKE -> preference.isNotifyOnLike();
+            case COMMENT -> preference.isNotifyOnComment();
+            case FOLLOW -> preference.isNotifyOnFollow();
+        };
+        if (!enabled) {
+            return;
+        }
+        Notification notification = Notification.builder()
+                .recipient(recipient)
+                .actor(actor)
+                .type(type)
+                .referencePostId(referencePostId)
+                .build();
+        notificationRepository.save(notification);
+        log.debug("Notification created: recipientId={}, actorId={}, type={}", recipient.getId(), actor.getId(), type);
     }
 }

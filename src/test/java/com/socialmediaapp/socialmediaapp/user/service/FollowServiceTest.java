@@ -1,6 +1,8 @@
 package com.socialmediaapp.socialmediaapp.user.service;
 
 import com.socialmediaapp.socialmediaapp.activity.ActivityLogService;
+import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
+import com.socialmediaapp.socialmediaapp.notification.service.NotificationService;
 import com.socialmediaapp.socialmediaapp.user.entity.Follow;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateFollowException;
@@ -37,6 +39,9 @@ class FollowServiceTest {
     @Mock
     private ActivityLogService activityLogService;
 
+    @Mock
+    private NotificationService notificationService;
+
     private FollowService followService;
 
     private User follower;
@@ -44,7 +49,7 @@ class FollowServiceTest {
 
     @BeforeEach
     void setUp() {
-        followService = new FollowService(followRepository, userRepository, activityLogService);
+        followService = new FollowService(followRepository, userRepository, activityLogService, notificationService);
         follower = User.builder().id(2L).username("bob").build();
         following = User.builder().id(1L).username("alice").build();
     }
@@ -61,6 +66,7 @@ class FollowServiceTest {
 
         assertThat(result.getFollower()).isEqualTo(follower);
         assertThat(result.getFollowing()).isEqualTo(following);
+        verify(notificationService).notifyIfEnabled(following, follower, NotificationType.FOLLOW, null);
     }
 
     @Test

@@ -9,6 +9,8 @@ import com.socialmediaapp.socialmediaapp.content.exception.LikeNotFoundException
 import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
 import com.socialmediaapp.socialmediaapp.content.repository.LikeRepository;
 import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
+import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
+import com.socialmediaapp.socialmediaapp.notification.service.NotificationService;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
@@ -29,6 +31,7 @@ public class LikeService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final ActivityLogService activityLogService;
+    private final NotificationService notificationService;
 
     public Like like(Long userId, Long postId) {
         User user = userRepository.findById(userId)
@@ -44,6 +47,7 @@ public class LikeService {
                 .build();
         Like saved = likeRepository.save(like);
         activityLogService.record(user, ActivityAction.LIKE_CREATED, "Like created: postId=" + postId);
+        notificationService.notifyIfEnabled(post.getAuthor(), user, NotificationType.LIKE, postId);
         log.debug("Like created: userId={}, postId={}", userId, postId);
         return saved;
     }

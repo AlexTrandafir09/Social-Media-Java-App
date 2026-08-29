@@ -9,6 +9,8 @@ import com.socialmediaapp.socialmediaapp.content.exception.CommentNotFoundExcept
 import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
 import com.socialmediaapp.socialmediaapp.content.repository.CommentRepository;
 import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
+import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
+import com.socialmediaapp.socialmediaapp.notification.service.NotificationService;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
@@ -47,17 +49,22 @@ class CommentServiceTest {
     @Mock
     private ActivityLogService activityLogService;
 
+    @Mock
+    private NotificationService notificationService;
+
     private CommentService commentService;
 
     private User author;
+    private User postAuthor;
     private Post post;
     private Comment comment;
 
     @BeforeEach
     void setUp() {
-        commentService = new CommentService(commentRepository, postRepository, userRepository, activityLogService);
+        commentService = new CommentService(commentRepository, postRepository, userRepository, activityLogService, notificationService);
         author = User.builder().id(2L).username("bob").build();
-        post = Post.builder().id(1L).content("hi").build();
+        postAuthor = User.builder().id(1L).username("alice").build();
+        post = Post.builder().id(1L).author(postAuthor).content("hi").build();
         comment = Comment.builder().id(1L).author(author).post(post).content("nice").build();
     }
 
@@ -73,6 +80,7 @@ class CommentServiceTest {
         assertThat(result.getContent()).isEqualTo("nice");
         assertThat(result.getAuthor()).isEqualTo(author);
         assertThat(result.getPost()).isEqualTo(post);
+        verify(notificationService).notifyIfEnabled(postAuthor, author, NotificationType.COMMENT, 1L);
     }
 
     @Test

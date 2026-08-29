@@ -6,8 +6,10 @@ import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
 import com.socialmediaapp.socialmediaapp.notification.exception.NotificationNotFoundException;
 import com.socialmediaapp.socialmediaapp.notification.repository.NotificationRepository;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
+import com.socialmediaapp.socialmediaapp.user.entity.UserPreference;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
+import com.socialmediaapp.socialmediaapp.user.service.UserPreferenceService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,6 +35,9 @@ class NotificationServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private UserPreferenceService userPreferenceService;
+
     private NotificationService notificationService;
 
     private User recipient;
@@ -41,7 +46,7 @@ class NotificationServiceTest {
 
     @BeforeEach
     void setUp() {
-        notificationService = new NotificationService(notificationRepository, userRepository);
+        notificationService = new NotificationService(notificationRepository, userRepository, userPreferenceService);
         recipient = User.builder().id(1L).username("alice").build();
         actor = User.builder().id(2L).username("bob").build();
         notification = Notification.builder()
@@ -152,5 +157,33 @@ class NotificationServiceTest {
                 .isInstanceOf(NotificationNotFoundException.class);
 
         verify(notificationRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void notifyIfEnabled_savesWhenPreferenceEnabled() {
+        UserPreference preference = UserPreference.builder().notifyOnLike(true).build();
+        when(userPreferenceService.getByUserId(1L)).thenReturn(preference);
+
+        notificationService.notifyIfEnabled(recipient, actor, NotificationType.LIKE, 5L);
+
+        verify(notificationRepository).save(any(Notification.class));
+    }
+
+    @Test
+    void notifyIfEnabled_skipsWhenPreferenceDisabled() {
+        UserPreference preference = UserPreference.builder().notifyOnComment(false).build();
+        when(userPreferenceService.getByUserId(1L)).thenReturn(preference);
+
+        notificationService.notifyIfEnabled(recipient, actor, NotificationType.COMMENT, 5L);
+
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
+    void notifyIfEnabled_skipsWhenRecipientIsActor() {
+        notificationService.notifyIfEnabled(recipient, recipient, NotificationType.FOLLOW, null);
+
+        verify(notificationRepository, never()).save(any());
+        verify(userPreferenceService, never()).getByUserId(any());
     }
 }

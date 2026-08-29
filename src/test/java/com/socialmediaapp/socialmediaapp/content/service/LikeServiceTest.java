@@ -8,6 +8,8 @@ import com.socialmediaapp.socialmediaapp.content.exception.LikeNotFoundException
 import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
 import com.socialmediaapp.socialmediaapp.content.repository.LikeRepository;
 import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
+import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
+import com.socialmediaapp.socialmediaapp.notification.service.NotificationService;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
@@ -42,16 +44,21 @@ class LikeServiceTest {
     @Mock
     private ActivityLogService activityLogService;
 
+    @Mock
+    private NotificationService notificationService;
+
     private LikeService likeService;
 
     private User user;
+    private User author;
     private Post post;
 
     @BeforeEach
     void setUp() {
-        likeService = new LikeService(likeRepository, postRepository, userRepository, activityLogService);
+        likeService = new LikeService(likeRepository, postRepository, userRepository, activityLogService, notificationService);
         user = User.builder().id(2L).username("bob").build();
-        post = Post.builder().id(1L).content("hi").build();
+        author = User.builder().id(1L).username("alice").build();
+        post = Post.builder().id(1L).author(author).content("hi").build();
     }
 
     @Test
@@ -66,6 +73,7 @@ class LikeServiceTest {
 
         assertThat(result.getUser()).isEqualTo(user);
         assertThat(result.getPost()).isEqualTo(post);
+        verify(notificationService).notifyIfEnabled(author, user, NotificationType.LIKE, 1L);
     }
 
     @Test

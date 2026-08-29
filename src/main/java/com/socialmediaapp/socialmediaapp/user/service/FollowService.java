@@ -2,6 +2,8 @@ package com.socialmediaapp.socialmediaapp.user.service;
 
 import com.socialmediaapp.socialmediaapp.activity.ActivityAction;
 import com.socialmediaapp.socialmediaapp.activity.ActivityLogService;
+import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
+import com.socialmediaapp.socialmediaapp.notification.service.NotificationService;
 import com.socialmediaapp.socialmediaapp.user.entity.Follow;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateFollowException;
@@ -26,6 +28,7 @@ public class FollowService {
     private final FollowRepository followRepository;
     private final UserRepository userRepository;
     private final ActivityLogService activityLogService;
+    private final NotificationService notificationService;
 
     public Follow follow(Long followerId, Long followingId) {
         if (followerId.equals(followingId)) {
@@ -44,6 +47,7 @@ public class FollowService {
                 .build();
         Follow saved = followRepository.save(follow);
         activityLogService.record(follower, ActivityAction.FOLLOW_CREATED, "Follow created: followingId=" + followingId);
+        notificationService.notifyIfEnabled(following, follower, NotificationType.FOLLOW, null);
         log.debug("Follow created: followerId={}, followingId={}", followerId, followingId);
         return saved;
     }

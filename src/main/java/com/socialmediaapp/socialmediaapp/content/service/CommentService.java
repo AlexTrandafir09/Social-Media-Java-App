@@ -10,6 +10,8 @@ import com.socialmediaapp.socialmediaapp.content.exception.CommentNotFoundExcept
 import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
 import com.socialmediaapp.socialmediaapp.content.repository.CommentRepository;
 import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
+import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
+import com.socialmediaapp.socialmediaapp.notification.service.NotificationService;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
@@ -30,6 +32,7 @@ public class CommentService {
     private final PostRepository postRepository;
     private final UserRepository userRepository;
     private final ActivityLogService activityLogService;
+    private final NotificationService notificationService;
 
     public Comment createComment(CommentCreateRequest request) {
         User author = userRepository.findById(request.authorId())
@@ -43,6 +46,7 @@ public class CommentService {
                 .build();
         Comment saved = commentRepository.save(comment);
         activityLogService.record(author, ActivityAction.COMMENT_CREATED, "Comment created: " + saved.getId());
+        notificationService.notifyIfEnabled(post.getAuthor(), author, NotificationType.COMMENT, post.getId());
         log.debug("Comment created: id={}, postId={}, authorId={}", saved.getId(), post.getId(), author.getId());
         return saved;
     }
