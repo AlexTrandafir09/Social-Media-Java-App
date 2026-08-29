@@ -25,6 +25,7 @@ async function onLogout() {
         <router-link to="/notifications">Notifications</router-link>
         <router-link v-if="authState.user.role === 'ADMIN'" to="/admin/activity">Activity log</router-link>
         <router-link :to="`/users/${authState.user.id}`">{{ authState.user.username }}</router-link>
+        <router-link to="/settings">Settings</router-link>
         <button @click="onLogout">Log out</button>
       </template>
       <template v-else>
