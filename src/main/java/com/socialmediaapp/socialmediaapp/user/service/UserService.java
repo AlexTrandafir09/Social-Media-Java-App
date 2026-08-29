@@ -10,6 +10,7 @@ import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,6 +25,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserPreferenceService userPreferenceService;
     private final ActivityLogService activityLogService;
+    private final PasswordEncoder passwordEncoder;
 
     public User createUser(User user) {
         if (userRepository.existsByUsername(user.getUsername())) {
@@ -32,6 +34,7 @@ public class UserService {
         if (userRepository.existsByEmail(user.getEmail())) {
             throw new DuplicateEmailException(user.getEmail());
         }
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
         User saved = userRepository.save(user);
         userPreferenceService.createDefault(saved);
         activityLogService.record(saved, ActivityAction.USER_REGISTERED, "User registered: " + saved.getUsername());
@@ -73,10 +76,10 @@ public class UserService {
 
     public void changePassword(Long id, String currentPassword, String newPassword) {
         User user = getUserById(id);
-        if (!user.getPassword().equals(currentPassword)) {
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new InvalidCurrentPasswordException();
         }
-        user.setPassword(newPassword);
+        user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
         activityLogService.record(user, ActivityAction.PASSWORD_CHANGED, "Password changed for " + user.getUsername());
         log.info("Password changed: userId={}", id);

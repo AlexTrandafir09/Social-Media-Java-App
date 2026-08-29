@@ -48,6 +48,11 @@ public class User {
 
     private String avatarUrl;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 20)
+    @Builder.Default
+    private Role role = Role.USER;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt;
 

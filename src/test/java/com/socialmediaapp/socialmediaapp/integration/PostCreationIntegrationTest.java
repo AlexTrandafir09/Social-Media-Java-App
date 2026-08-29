@@ -1,5 +1,6 @@
 package com.socialmediaapp.socialmediaapp.integration;
 
+import com.socialmediaapp.socialmediaapp.security.JwtService;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
@@ -28,7 +30,11 @@ class PostCreationIntegrationTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private JwtService jwtService;
+
     private Long authorId;
+    private String accessToken;
 
     @BeforeEach
     void setUp() {
@@ -38,6 +44,7 @@ class PostCreationIntegrationTest {
                 .password("pass1234")
                 .build());
         authorId = author.getId();
+        accessToken = jwtService.generateAccessToken(author);
     }
 
     @Test
@@ -47,6 +54,7 @@ class PostCreationIntegrationTest {
                 """.formatted(authorId);
 
         MvcResult result = mockMvc.perform(post("/api/posts")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isCreated())
@@ -67,6 +75,7 @@ class PostCreationIntegrationTest {
                 """.formatted(authorId);
 
         mockMvc.perform(post("/api/posts")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isBadRequest())
@@ -80,6 +89,7 @@ class PostCreationIntegrationTest {
                 """;
 
         mockMvc.perform(post("/api/posts")
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound())

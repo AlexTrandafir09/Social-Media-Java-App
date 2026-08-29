@@ -7,6 +7,8 @@ import com.socialmediaapp.socialmediaapp.content.exception.PostImageNotFoundExce
 import com.socialmediaapp.socialmediaapp.content.exception.PostMustHaveImageException;
 import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
 import com.socialmediaapp.socialmediaapp.notification.exception.NotificationNotFoundException;
+import com.socialmediaapp.socialmediaapp.security.InvalidCredentialsException;
+import com.socialmediaapp.socialmediaapp.security.InvalidRefreshTokenException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateEmailException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateFollowException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateUsernameException;
@@ -66,6 +68,15 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException ex) {
         log.debug("Bad request: {}", ex.getMessage());
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new ErrorResponse(ex.getMessage()));
+    }
+
+    @ExceptionHandler({
+            InvalidCredentialsException.class,
+            InvalidRefreshTokenException.class
+    })
+    public ResponseEntity<ErrorResponse> handleUnauthorized(RuntimeException ex) {
+        log.debug("Unauthorized: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(new ErrorResponse(ex.getMessage()));
     }
 
     // Placeholder until Phase 03's cascade/deletion-order decision is implemented per entity.

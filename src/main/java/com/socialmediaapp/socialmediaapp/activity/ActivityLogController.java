@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-// Open for now, intentionally - real admin-only access control needs Phase 08 (Security) to mean anything.
+// Admin-only, enforced in SecurityConfig via a path-based rule requiring ROLE_ADMIN.
 @RestController
 @RequestMapping("/api/activity")
 @RequiredArgsConstructor

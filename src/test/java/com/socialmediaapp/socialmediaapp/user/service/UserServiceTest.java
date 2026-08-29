@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
@@ -35,13 +36,16 @@ class UserServiceTest {
     @Mock
     private ActivityLogService activityLogService;
 
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
     private UserService userService;
 
     private User user;
 
     @BeforeEach
     void setUp() {
-        userService = new UserService(userRepository, userPreferenceService, activityLogService);
+        userService = new UserService(userRepository, userPreferenceService, activityLogService, passwordEncoder);
         user = User.builder()
                 .id(1L)
                 .username("alext")
@@ -54,11 +58,13 @@ class UserServiceTest {
     void createUser_savesWhenUsernameAndEmailAreUnique() {
         when(userRepository.existsByUsername("alext")).thenReturn(false);
         when(userRepository.existsByEmail("alext@example.com")).thenReturn(false);
+        when(passwordEncoder.encode("secret")).thenReturn("hashed-secret");
         when(userRepository.save(user)).thenReturn(user);
 
         User created = userService.createUser(user);
 
         assertThat(created).isEqualTo(user);
+        assertThat(created.getPassword()).isEqualTo("hashed-secret");
         verify(userRepository).save(user);
     }
 
@@ -175,16 +181,19 @@ class UserServiceTest {
     @Test
     void changePassword_updatesWhenCurrentPasswordMatches() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("secret", "secret")).thenReturn(true);
+        when(passwordEncoder.encode("newSecret")).thenReturn("hashed-newSecret");
 
         userService.changePassword(1L, "secret", "newSecret");
 
-        assertThat(user.getPassword()).isEqualTo("newSecret");
+        assertThat(user.getPassword()).isEqualTo("hashed-newSecret");
         verify(userRepository).save(user);
     }
 
     @Test
     void changePassword_throwsWhenCurrentPasswordIsWrong() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("wrongPassword", "secret")).thenReturn(false);
 
         assertThatThrownBy(() -> userService.changePassword(1L, "wrongPassword", "newSecret"))
                 .isInstanceOf(InvalidCurrentPasswordException.class);
