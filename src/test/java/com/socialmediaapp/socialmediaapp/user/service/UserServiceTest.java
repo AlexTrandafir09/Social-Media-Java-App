@@ -7,11 +7,16 @@ import com.socialmediaapp.socialmediaapp.user.exception.DuplicateUsernameExcepti
 import com.socialmediaapp.socialmediaapp.user.exception.InvalidCurrentPasswordException;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
@@ -52,6 +57,18 @@ class UserServiceTest {
                 .email("alext@example.com")
                 .password("secret")
                 .build();
+        authenticateAs(1L, "ROLE_USER");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long userId, String... authorities) {
+        var grantedAuthorities = List.of(authorities).stream().map(SimpleGrantedAuthority::new).toList();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userId, null, grantedAuthorities));
     }
 
     @Test
@@ -134,12 +151,35 @@ class UserServiceTest {
 
     @Test
     void updateUser_throwsWhenUserNotFound() {
+        authenticateAs(99L, "ROLE_USER");
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.updateUser(99L, user))
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateUser_throwsWhenNotSelfAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+
+        assertThatThrownBy(() -> userService.updateUser(1L, user))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void updateUser_succeedsWhenAdminButNotSelf() {
+        authenticateAs(2L, "ROLE_ADMIN");
+        User updates = User.builder().bio("hello").avatarUrl("avatar.png").build();
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        User result = userService.updateUser(1L, updates);
+
+        assertThat(result.getBio()).isEqualTo("hello");
     }
 
     @Test
@@ -179,6 +219,28 @@ class UserServiceTest {
     }
 
     @Test
+    void changeEmail_throwsWhenNotSelfAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+
+        assertThatThrownBy(() -> userService.changeEmail(1L, "new@example.com"))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void changeEmail_succeedsWhenAdminButNotSelf() {
+        authenticateAs(2L, "ROLE_ADMIN");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.findByEmail("new@example.com")).thenReturn(Optional.empty());
+        when(userRepository.save(user)).thenReturn(user);
+
+        User result = userService.changeEmail(1L, "new@example.com");
+
+        assertThat(result.getEmail()).isEqualTo("new@example.com");
+    }
+
+    @Test
     void changePassword_updatesWhenCurrentPasswordMatches() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(passwordEncoder.matches("secret", "secret")).thenReturn(true);
@@ -202,6 +264,28 @@ class UserServiceTest {
     }
 
     @Test
+    void changePassword_throwsWhenNotSelfAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+
+        assertThatThrownBy(() -> userService.changePassword(1L, "secret", "newSecret"))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void changePassword_succeedsWhenAdminButNotSelf() {
+        authenticateAs(2L, "ROLE_ADMIN");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(passwordEncoder.matches("secret", "secret")).thenReturn(true);
+        when(passwordEncoder.encode("newSecret")).thenReturn("hashed-newSecret");
+
+        userService.changePassword(1L, "secret", "newSecret");
+
+        assertThat(user.getPassword()).isEqualTo("hashed-newSecret");
+    }
+
+    @Test
     void deleteUser_deletesWhenUserExists() {
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
@@ -212,11 +296,32 @@ class UserServiceTest {
 
     @Test
     void deleteUser_throwsWhenUserDoesNotExist() {
+        authenticateAs(99L, "ROLE_USER");
         when(userRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> userService.deleteUser(99L))
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteUser_throwsWhenNotSelfAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+
+        assertThatThrownBy(() -> userService.deleteUser(1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(userRepository, never()).delete(any());
+    }
+
+    @Test
+    void deleteUser_succeedsWhenAdminButNotSelf() {
+        authenticateAs(2L, "ROLE_ADMIN");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        userService.deleteUser(1L);
+
+        verify(userRepository).delete(user);
     }
 }

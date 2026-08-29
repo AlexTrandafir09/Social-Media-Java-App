@@ -13,11 +13,15 @@ import com.socialmediaapp.socialmediaapp.notification.service.NotificationServic
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,6 +63,18 @@ class LikeServiceTest {
         user = User.builder().id(2L).username("bob").build();
         author = User.builder().id(1L).username("alice").build();
         post = Post.builder().id(1L).author(author).content("hi").build();
+        authenticateAs(2L, "ROLE_USER");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long userId, String... authorities) {
+        var grantedAuthorities = List.of(authorities).stream().map(SimpleGrantedAuthority::new).toList();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userId, null, grantedAuthorities));
     }
 
     @Test
@@ -69,7 +85,7 @@ class LikeServiceTest {
         Like like = Like.builder().user(user).post(post).build();
         when(likeRepository.save(any(Like.class))).thenReturn(like);
 
-        Like result = likeService.like(2L, 1L);
+        Like result = likeService.like(1L);
 
         assertThat(result.getUser()).isEqualTo(user);
         assertThat(result.getPost()).isEqualTo(post);
@@ -80,7 +96,7 @@ class LikeServiceTest {
     void like_throwsWhenUserNotFound() {
         when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> likeService.like(2L, 1L))
+        assertThatThrownBy(() -> likeService.like(1L))
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(likeRepository, never()).save(any());
@@ -91,7 +107,7 @@ class LikeServiceTest {
         when(userRepository.findById(2L)).thenReturn(Optional.of(user));
         when(postRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> likeService.like(2L, 1L))
+        assertThatThrownBy(() -> likeService.like(1L))
                 .isInstanceOf(PostNotFoundException.class);
 
         verify(likeRepository, never()).save(any());
@@ -103,7 +119,7 @@ class LikeServiceTest {
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(likeRepository.existsByUserIdAndPostId(2L, 1L)).thenReturn(true);
 
-        assertThatThrownBy(() -> likeService.like(2L, 1L))
+        assertThatThrownBy(() -> likeService.like(1L))
                 .isInstanceOf(DuplicateLikeException.class);
 
         verify(likeRepository, never()).save(any());
@@ -114,7 +130,7 @@ class LikeServiceTest {
         Like like = Like.builder().user(user).post(post).build();
         when(likeRepository.findByUserIdAndPostId(2L, 1L)).thenReturn(Optional.of(like));
 
-        likeService.unlike(2L, 1L);
+        likeService.unlike(1L);
 
         verify(likeRepository).delete(like);
     }
@@ -123,7 +139,7 @@ class LikeServiceTest {
     void unlike_throwsWhenNotFound() {
         when(likeRepository.findByUserIdAndPostId(2L, 1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> likeService.unlike(2L, 1L))
+        assertThatThrownBy(() -> likeService.unlike(1L))
                 .isInstanceOf(LikeNotFoundException.class);
 
         verify(likeRepository, never()).delete(any(Like.class));

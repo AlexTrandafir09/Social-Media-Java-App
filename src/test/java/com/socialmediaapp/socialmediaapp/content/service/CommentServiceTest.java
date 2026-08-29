@@ -14,6 +14,7 @@ import com.socialmediaapp.socialmediaapp.notification.service.NotificationServic
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +24,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -66,11 +71,23 @@ class CommentServiceTest {
         postAuthor = User.builder().id(1L).username("alice").build();
         post = Post.builder().id(1L).author(postAuthor).content("hi").build();
         comment = Comment.builder().id(1L).author(author).post(post).content("nice").build();
+        authenticateAs(2L, "ROLE_USER");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long userId, String... authorities) {
+        var grantedAuthorities = List.of(authorities).stream().map(SimpleGrantedAuthority::new).toList();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userId, null, grantedAuthorities));
     }
 
     @Test
     void createComment_savesWhenValid() {
-        CommentCreateRequest request = new CommentCreateRequest(2L, 1L, "nice");
+        CommentCreateRequest request = new CommentCreateRequest(1L, "nice");
         when(userRepository.findById(2L)).thenReturn(Optional.of(author));
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(commentRepository.save(any(Comment.class))).thenReturn(comment);
@@ -85,7 +102,7 @@ class CommentServiceTest {
 
     @Test
     void createComment_throwsWhenAuthorNotFound() {
-        CommentCreateRequest request = new CommentCreateRequest(2L, 1L, "nice");
+        CommentCreateRequest request = new CommentCreateRequest(1L, "nice");
         when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> commentService.createComment(request))
@@ -96,7 +113,7 @@ class CommentServiceTest {
 
     @Test
     void createComment_throwsWhenPostNotFound() {
-        CommentCreateRequest request = new CommentCreateRequest(2L, 1L, "nice");
+        CommentCreateRequest request = new CommentCreateRequest(1L, "nice");
         when(userRepository.findById(2L)).thenReturn(Optional.of(author));
         when(postRepository.findById(1L)).thenReturn(Optional.empty());
 
@@ -152,6 +169,28 @@ class CommentServiceTest {
     }
 
     @Test
+    void updateComment_throwsWhenNotOwnerAndNotAdmin() {
+        authenticateAs(3L, "ROLE_USER");
+        when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.updateComment(1L, new CommentUpdateRequest("x")))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(commentRepository, never()).save(any());
+    }
+
+    @Test
+    void updateComment_succeedsWhenAdminButNotOwner() {
+        authenticateAs(3L, "ROLE_ADMIN");
+        when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
+        when(commentRepository.save(comment)).thenReturn(comment);
+
+        Comment result = commentService.updateComment(1L, new CommentUpdateRequest("edited"));
+
+        assertThat(result.getContent()).isEqualTo("edited");
+    }
+
+    @Test
     void deleteComment_deletesWhenExists() {
         when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
 
@@ -168,5 +207,26 @@ class CommentServiceTest {
                 .isInstanceOf(CommentNotFoundException.class);
 
         verify(commentRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteComment_throwsWhenNotOwnerAndNotAdmin() {
+        authenticateAs(3L, "ROLE_USER");
+        when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
+
+        assertThatThrownBy(() -> commentService.deleteComment(1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(commentRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteComment_succeedsWhenAdminButNotOwner() {
+        authenticateAs(3L, "ROLE_ADMIN");
+        when(commentRepository.findById(1L)).thenReturn(Optional.of(comment));
+
+        commentService.deleteComment(1L);
+
+        verify(commentRepository).deleteById(1L);
     }
 }

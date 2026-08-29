@@ -12,6 +12,7 @@ import com.socialmediaapp.socialmediaapp.content.repository.CommentRepository;
 import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
 import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
 import com.socialmediaapp.socialmediaapp.notification.service.NotificationService;
+import com.socialmediaapp.socialmediaapp.security.SecurityUtils;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,8 +37,9 @@ public class CommentService {
     private final NotificationService notificationService;
 
     public Comment createComment(CommentCreateRequest request) {
-        User author = userRepository.findById(request.authorId())
-                .orElseThrow(() -> new UserNotFoundException(request.authorId()));
+        Long authorId = SecurityUtils.getCurrentUserId();
+        User author = userRepository.findById(authorId)
+                .orElseThrow(() -> new UserNotFoundException(authorId));
         Post post = postRepository.findById(request.postId())
                 .orElseThrow(() -> new PostNotFoundException(request.postId()));
         Comment comment = Comment.builder()
@@ -64,6 +67,9 @@ public class CommentService {
 
     public Comment updateComment(Long id, CommentUpdateRequest request) {
         Comment comment = getCommentById(id);
+        if (!SecurityUtils.isCurrentUserOrAdmin(comment.getAuthor().getId())) {
+            throw new AccessDeniedException("You can only edit your own comments");
+        }
         comment.setContent(request.content());
         Comment saved = commentRepository.save(comment);
         activityLogService.record(comment.getAuthor(), ActivityAction.COMMENT_UPDATED, "Comment updated: " + id);
@@ -73,6 +79,9 @@ public class CommentService {
 
     public void deleteComment(Long id) {
         Comment comment = getCommentById(id);
+        if (!SecurityUtils.isCurrentUserOrAdmin(comment.getAuthor().getId())) {
+            throw new AccessDeniedException("You can only delete your own comments");
+        }
         commentRepository.deleteById(id);
         activityLogService.record(comment.getAuthor(), ActivityAction.COMMENT_DELETED, "Comment deleted: " + id);
         log.debug("Comment deleted: id={}", id);

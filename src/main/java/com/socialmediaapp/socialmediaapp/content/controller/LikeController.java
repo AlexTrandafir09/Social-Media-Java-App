@@ -20,13 +20,13 @@ public class LikeController {
 
     @PostMapping
     public ResponseEntity<Like> like(@Valid @RequestBody LikeRequest request) {
-        Like like = likeService.like(request.userId(), request.postId());
+        Like like = likeService.like(request.postId());
         return ResponseEntity.status(HttpStatus.CREATED).body(like);
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> unlike(@RequestParam Long userId, @RequestParam Long postId) {
-        likeService.unlike(userId, postId);
+    public ResponseEntity<Void> unlike(@RequestParam Long postId) {
+        likeService.unlike(postId);
         return ResponseEntity.noContent().build();
     }
 

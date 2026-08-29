@@ -33,7 +33,6 @@ class PostCreationIntegrationTest {
     @Autowired
     private JwtService jwtService;
 
-    private Long authorId;
     private String accessToken;
 
     @BeforeEach
@@ -43,15 +42,14 @@ class PostCreationIntegrationTest {
                 .email("alice@test.com")
                 .password("pass1234")
                 .build());
-        authorId = author.getId();
         accessToken = jwtService.generateAccessToken(author);
     }
 
     @Test
     void createPost_returnsCreatedPostWithNestedImagesAndNoProxyLeak() throws Exception {
         String body = """
-                {"authorId": %d, "content": "hello world", "images": [{"storageKey": "a.png", "filter": "SEPIA"}]}
-                """.formatted(authorId);
+                {"content": "hello world", "images": [{"storageKey": "a.png", "filter": "SEPIA"}]}
+                """;
 
         MvcResult result = mockMvc.perform(post("/api/posts")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
@@ -71,8 +69,8 @@ class PostCreationIntegrationTest {
     @Test
     void createPost_rejectsWhenImagesEmpty() throws Exception {
         String body = """
-                {"authorId": %d, "content": "hello world", "images": []}
-                """.formatted(authorId);
+                {"content": "hello world", "images": []}
+                """;
 
         mockMvc.perform(post("/api/posts")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
@@ -83,16 +81,25 @@ class PostCreationIntegrationTest {
     }
 
     @Test
-    void createPost_returnsNotFoundWhenAuthorMissing() throws Exception {
+    void createPost_returnsNotFoundWhenTokenReferencesDeletedAuthor() throws Exception {
+        User staleUser = userRepository.save(User.builder()
+                .username("ghost")
+                .email("ghost@test.com")
+                .password("pass1234")
+                .build());
+        String staleToken = jwtService.generateAccessToken(staleUser);
+        Long staleUserId = staleUser.getId();
+        userRepository.delete(staleUser);
+
         String body = """
-                {"authorId": 999999, "content": "hello world", "images": [{"storageKey": "a.png"}]}
+                {"content": "hello world", "images": [{"storageKey": "a.png"}]}
                 """;
 
         mockMvc.perform(post("/api/posts")
-                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + accessToken)
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + staleToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(body))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("User not found: 999999"));
+                .andExpect(jsonPath("$.message").value("User not found: " + staleUserId));
     }
 }

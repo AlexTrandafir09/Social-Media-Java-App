@@ -11,8 +11,10 @@ import com.socialmediaapp.socialmediaapp.content.exception.PostImageNotFoundExce
 import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
 import com.socialmediaapp.socialmediaapp.content.repository.PostImageRepository;
 import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
+import com.socialmediaapp.socialmediaapp.security.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,9 @@ public class PostImageService {
     public PostImage addImage(Long postId, PostImageCreateRequest request) {
         Post post = postRepository.findById(postId)
                 .orElseThrow(() -> new PostNotFoundException(postId));
+        if (!SecurityUtils.isCurrentUserOrAdmin(post.getAuthor().getId())) {
+            throw new AccessDeniedException("You can only add images to your own posts");
+        }
         PostImage image = PostImage.builder()
                 .post(post)
                 .storageKey(request.storageKey())
@@ -57,6 +62,9 @@ public class PostImageService {
 
     public PostImage updateFilter(Long postId, Long id, PostImageUpdateRequest request) {
         PostImage image = getImageById(postId, id);
+        if (!SecurityUtils.isCurrentUserOrAdmin(image.getPost().getAuthor().getId())) {
+            throw new AccessDeniedException("You can only edit images on your own posts");
+        }
         image.setActiveFilter(request.filter());
         PostImage saved = postImageRepository.save(image);
         log.debug("Post image filter updated: id={}, filter={}", id, request.filter());
@@ -65,6 +73,9 @@ public class PostImageService {
 
     public void deleteImage(Long postId, Long id) {
         PostImage image = getImageById(postId, id);
+        if (!SecurityUtils.isCurrentUserOrAdmin(image.getPost().getAuthor().getId())) {
+            throw new AccessDeniedException("You can only delete images on your own posts");
+        }
         postImageRepository.deleteById(id);
         activityLogService.record(image.getPost().getAuthor(), ActivityAction.POST_IMAGE_DELETED, "Image deleted: " + id);
         log.debug("Post image deleted: id={}", id);

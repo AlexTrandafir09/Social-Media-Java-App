@@ -10,11 +10,16 @@ import com.socialmediaapp.socialmediaapp.user.entity.UserPreference;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
 import com.socialmediaapp.socialmediaapp.user.service.UserPreferenceService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -57,11 +62,23 @@ class NotificationServiceTest {
                 .referencePostId(1L)
                 .read(false)
                 .build();
+        authenticateAs(2L, "ROLE_USER");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long userId, String... authorities) {
+        var grantedAuthorities = List.of(authorities).stream().map(SimpleGrantedAuthority::new).toList();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userId, null, grantedAuthorities));
     }
 
     @Test
     void createNotification_savesWhenValid() {
-        NotificationCreateRequest request = new NotificationCreateRequest(1L, 2L, NotificationType.LIKE, 1L);
+        NotificationCreateRequest request = new NotificationCreateRequest(1L, NotificationType.LIKE, 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(recipient));
         when(userRepository.findById(2L)).thenReturn(Optional.of(actor));
         when(notificationRepository.save(any(Notification.class))).thenReturn(notification);
@@ -75,7 +92,7 @@ class NotificationServiceTest {
 
     @Test
     void createNotification_throwsWhenRecipientNotFound() {
-        NotificationCreateRequest request = new NotificationCreateRequest(1L, 2L, NotificationType.LIKE, 1L);
+        NotificationCreateRequest request = new NotificationCreateRequest(1L, NotificationType.LIKE, 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> notificationService.createNotification(request))
@@ -86,7 +103,7 @@ class NotificationServiceTest {
 
     @Test
     void createNotification_throwsWhenActorNotFound() {
-        NotificationCreateRequest request = new NotificationCreateRequest(1L, 2L, NotificationType.LIKE, 1L);
+        NotificationCreateRequest request = new NotificationCreateRequest(1L, NotificationType.LIKE, 1L);
         when(userRepository.findById(1L)).thenReturn(Optional.of(recipient));
         when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
@@ -98,6 +115,7 @@ class NotificationServiceTest {
 
     @Test
     void getNotificationById_returnsNotificationWhenFound() {
+        authenticateAs(1L, "ROLE_USER");
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
 
         Notification result = notificationService.getNotificationById(1L);
@@ -114,7 +132,27 @@ class NotificationServiceTest {
     }
 
     @Test
+    void getNotificationById_throwsWhenNotRecipientAndNotAdmin() {
+        authenticateAs(3L, "ROLE_USER");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
+
+        assertThatThrownBy(() -> notificationService.getNotificationById(1L))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void getNotificationById_succeedsWhenAdminButNotRecipient() {
+        authenticateAs(3L, "ROLE_ADMIN");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
+
+        Notification result = notificationService.getNotificationById(1L);
+
+        assertThat(result).isEqualTo(notification);
+    }
+
+    @Test
     void getNotificationsForUser_returnsList() {
+        authenticateAs(1L, "ROLE_USER");
         when(notificationRepository.findByRecipientId(1L)).thenReturn(List.of(notification));
 
         List<Notification> result = notificationService.getNotificationsForUser(1L);
@@ -123,7 +161,18 @@ class NotificationServiceTest {
     }
 
     @Test
+    void getNotificationsForUser_throwsWhenNotSelfAndNotAdmin() {
+        authenticateAs(3L, "ROLE_USER");
+
+        assertThatThrownBy(() -> notificationService.getNotificationsForUser(1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(notificationRepository, never()).findByRecipientId(any());
+    }
+
+    @Test
     void markAsRead_setsReadTrue() {
+        authenticateAs(1L, "ROLE_USER");
         when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
         when(notificationRepository.save(notification)).thenReturn(notification);
 
@@ -141,8 +190,20 @@ class NotificationServiceTest {
     }
 
     @Test
+    void markAsRead_throwsWhenNotRecipientAndNotAdmin() {
+        authenticateAs(3L, "ROLE_USER");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
+
+        assertThatThrownBy(() -> notificationService.markAsRead(1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(notificationRepository, never()).save(any());
+    }
+
+    @Test
     void deleteNotification_deletesWhenExists() {
-        when(notificationRepository.existsById(1L)).thenReturn(true);
+        authenticateAs(1L, "ROLE_USER");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
 
         notificationService.deleteNotification(1L);
 
@@ -151,12 +212,33 @@ class NotificationServiceTest {
 
     @Test
     void deleteNotification_throwsWhenNotFound() {
-        when(notificationRepository.existsById(99L)).thenReturn(false);
+        when(notificationRepository.findById(99L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> notificationService.deleteNotification(99L))
                 .isInstanceOf(NotificationNotFoundException.class);
 
         verify(notificationRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteNotification_throwsWhenNotRecipientAndNotAdmin() {
+        authenticateAs(3L, "ROLE_USER");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
+
+        assertThatThrownBy(() -> notificationService.deleteNotification(1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(notificationRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteNotification_succeedsWhenAdminButNotRecipient() {
+        authenticateAs(3L, "ROLE_ADMIN");
+        when(notificationRepository.findById(1L)).thenReturn(Optional.of(notification));
+
+        notificationService.deleteNotification(1L);
+
+        verify(notificationRepository).deleteById(1L);
     }
 
     @Test

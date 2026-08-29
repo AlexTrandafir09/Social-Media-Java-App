@@ -13,6 +13,7 @@ import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +23,10 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -59,11 +64,23 @@ class PostServiceTest {
         postService = new PostService(postRepository, postImageRepository, userRepository, activityLogService);
         author = User.builder().id(1L).username("alice").build();
         post = Post.builder().id(1L).author(author).content("hello").build();
+        authenticateAs(1L, "ROLE_USER");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long userId, String... authorities) {
+        var grantedAuthorities = List.of(authorities).stream().map(SimpleGrantedAuthority::new).toList();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userId, null, grantedAuthorities));
     }
 
     @Test
     void createPost_savesPostAndImages() {
-        PostCreateRequest request = new PostCreateRequest(1L, "hello", List.of(new PostImageInput("a.png", ImageFilter.CONTRAST)));
+        PostCreateRequest request = new PostCreateRequest("hello", List.of(new PostImageInput("a.png", ImageFilter.CONTRAST)));
         when(userRepository.findById(1L)).thenReturn(Optional.of(author));
         when(postRepository.save(any(Post.class))).thenReturn(post);
         when(postImageRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
@@ -78,7 +95,7 @@ class PostServiceTest {
 
     @Test
     void createPost_throwsWhenAuthorNotFound() {
-        PostCreateRequest request = new PostCreateRequest(1L, "hello", List.of(new PostImageInput("a.png", null)));
+        PostCreateRequest request = new PostCreateRequest("hello", List.of(new PostImageInput("a.png", null)));
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> postService.createPost(request))
@@ -89,7 +106,7 @@ class PostServiceTest {
 
     @Test
     void createPost_throwsWhenImagesEmpty() {
-        PostCreateRequest request = new PostCreateRequest(1L, "hello", List.of());
+        PostCreateRequest request = new PostCreateRequest("hello", List.of());
         when(userRepository.findById(1L)).thenReturn(Optional.of(author));
 
         assertThatThrownBy(() -> postService.createPost(request))
@@ -100,7 +117,7 @@ class PostServiceTest {
 
     @Test
     void createPost_throwsWhenImagesNull() {
-        PostCreateRequest request = new PostCreateRequest(1L, "hello", null);
+        PostCreateRequest request = new PostCreateRequest("hello", null);
         when(userRepository.findById(1L)).thenReturn(Optional.of(author));
 
         assertThatThrownBy(() -> postService.createPost(request))
@@ -162,6 +179,28 @@ class PostServiceTest {
     }
 
     @Test
+    void updatePost_throwsWhenNotOwnerAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postService.updatePost(1L, new PostUpdateRequest("x")))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(postRepository, never()).save(any());
+    }
+
+    @Test
+    void updatePost_succeedsWhenAdminButNotOwner() {
+        authenticateAs(2L, "ROLE_ADMIN");
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postRepository.save(post)).thenReturn(post);
+
+        Post result = postService.updatePost(1L, new PostUpdateRequest("updated"));
+
+        assertThat(result.getContent()).isEqualTo("updated");
+    }
+
+    @Test
     void deletePost_deletesWhenExists() {
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
 
@@ -178,5 +217,26 @@ class PostServiceTest {
                 .isInstanceOf(PostNotFoundException.class);
 
         verify(postRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deletePost_throwsWhenNotOwnerAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postService.deletePost(1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(postRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deletePost_succeedsWhenAdminButNotOwner() {
+        authenticateAs(2L, "ROLE_ADMIN");
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+        postService.deletePost(1L);
+
+        verify(postRepository).deleteById(1L);
     }
 }

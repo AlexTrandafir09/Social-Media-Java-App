@@ -11,11 +11,15 @@ import com.socialmediaapp.socialmediaapp.user.exception.SelfFollowException;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.FollowRepository;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -52,6 +56,18 @@ class FollowServiceTest {
         followService = new FollowService(followRepository, userRepository, activityLogService, notificationService);
         follower = User.builder().id(2L).username("bob").build();
         following = User.builder().id(1L).username("alice").build();
+        authenticateAs(2L, "ROLE_USER");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long userId, String... authorities) {
+        var grantedAuthorities = List.of(authorities).stream().map(SimpleGrantedAuthority::new).toList();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userId, null, grantedAuthorities));
     }
 
     @Test
@@ -62,7 +78,7 @@ class FollowServiceTest {
         Follow follow = Follow.builder().follower(follower).following(following).build();
         when(followRepository.save(any(Follow.class))).thenReturn(follow);
 
-        Follow result = followService.follow(2L, 1L);
+        Follow result = followService.follow(1L);
 
         assertThat(result.getFollower()).isEqualTo(follower);
         assertThat(result.getFollowing()).isEqualTo(following);
@@ -71,7 +87,9 @@ class FollowServiceTest {
 
     @Test
     void follow_throwsWhenFollowingSelf() {
-        assertThatThrownBy(() -> followService.follow(1L, 1L))
+        authenticateAs(1L, "ROLE_USER");
+
+        assertThatThrownBy(() -> followService.follow(1L))
                 .isInstanceOf(SelfFollowException.class);
 
         verify(followRepository, never()).save(any());
@@ -81,7 +99,7 @@ class FollowServiceTest {
     void follow_throwsWhenFollowerNotFound() {
         when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> followService.follow(2L, 1L))
+        assertThatThrownBy(() -> followService.follow(1L))
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(followRepository, never()).save(any());
@@ -92,7 +110,7 @@ class FollowServiceTest {
         when(userRepository.findById(2L)).thenReturn(Optional.of(follower));
         when(userRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> followService.follow(2L, 1L))
+        assertThatThrownBy(() -> followService.follow(1L))
                 .isInstanceOf(UserNotFoundException.class);
 
         verify(followRepository, never()).save(any());
@@ -104,7 +122,7 @@ class FollowServiceTest {
         when(userRepository.findById(1L)).thenReturn(Optional.of(following));
         when(followRepository.existsByFollowerIdAndFollowingId(2L, 1L)).thenReturn(true);
 
-        assertThatThrownBy(() -> followService.follow(2L, 1L))
+        assertThatThrownBy(() -> followService.follow(1L))
                 .isInstanceOf(DuplicateFollowException.class);
 
         verify(followRepository, never()).save(any());
@@ -115,7 +133,7 @@ class FollowServiceTest {
         Follow follow = Follow.builder().follower(follower).following(following).build();
         when(followRepository.findByFollowerIdAndFollowingId(2L, 1L)).thenReturn(Optional.of(follow));
 
-        followService.unfollow(2L, 1L);
+        followService.unfollow(1L);
 
         verify(followRepository).delete(follow);
     }
@@ -124,7 +142,7 @@ class FollowServiceTest {
     void unfollow_throwsWhenNotFound() {
         when(followRepository.findByFollowerIdAndFollowingId(2L, 1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> followService.unfollow(2L, 1L))
+        assertThatThrownBy(() -> followService.unfollow(1L))
                 .isInstanceOf(FollowNotFoundException.class);
 
         verify(followRepository, never()).delete(any(Follow.class));

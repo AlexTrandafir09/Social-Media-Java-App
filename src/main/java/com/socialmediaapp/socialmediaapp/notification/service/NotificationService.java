@@ -5,6 +5,7 @@ import com.socialmediaapp.socialmediaapp.notification.entity.Notification;
 import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
 import com.socialmediaapp.socialmediaapp.notification.exception.NotificationNotFoundException;
 import com.socialmediaapp.socialmediaapp.notification.repository.NotificationRepository;
+import com.socialmediaapp.socialmediaapp.security.SecurityUtils;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.entity.UserPreference;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
@@ -12,6 +13,7 @@ import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
 import com.socialmediaapp.socialmediaapp.user.service.UserPreferenceService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,10 +30,11 @@ public class NotificationService {
     private final UserPreferenceService userPreferenceService;
 
     public Notification createNotification(NotificationCreateRequest request) {
+        Long actorId = SecurityUtils.getCurrentUserId();
         User recipient = userRepository.findById(request.recipientId())
                 .orElseThrow(() -> new UserNotFoundException(request.recipientId()));
-        User actor = userRepository.findById(request.actorId())
-                .orElseThrow(() -> new UserNotFoundException(request.actorId()));
+        User actor = userRepository.findById(actorId)
+                .orElseThrow(() -> new UserNotFoundException(actorId));
         Notification notification = Notification.builder()
                 .recipient(recipient)
                 .actor(actor)
@@ -45,12 +48,19 @@ public class NotificationService {
 
     @Transactional(readOnly = true)
     public Notification getNotificationById(Long id) {
-        return notificationRepository.findById(id)
+        Notification notification = notificationRepository.findById(id)
                 .orElseThrow(() -> new NotificationNotFoundException(id));
+        if (!SecurityUtils.isCurrentUserOrAdmin(notification.getRecipient().getId())) {
+            throw new AccessDeniedException("You can only view your own notifications");
+        }
+        return notification;
     }
 
     @Transactional(readOnly = true)
     public List<Notification> getNotificationsForUser(Long recipientId) {
+        if (!SecurityUtils.isCurrentUserOrAdmin(recipientId)) {
+            throw new AccessDeniedException("You can only view your own notifications");
+        }
         return notificationRepository.findByRecipientId(recipientId);
     }
 
@@ -63,9 +73,7 @@ public class NotificationService {
     }
 
     public void deleteNotification(Long id) {
-        if (!notificationRepository.existsById(id)) {
-            throw new NotificationNotFoundException(id);
-        }
+        getNotificationById(id);
         notificationRepository.deleteById(id);
         log.debug("Notification deleted: id={}", id);
     }

@@ -11,6 +11,7 @@ import com.socialmediaapp.socialmediaapp.content.exception.PostMustHaveImageExce
 import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
 import com.socialmediaapp.socialmediaapp.content.repository.PostImageRepository;
 import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
+import com.socialmediaapp.socialmediaapp.security.SecurityUtils;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,8 +37,9 @@ public class PostService {
     private final ActivityLogService activityLogService;
 
     public Post createPost(PostCreateRequest request) {
-        User author = userRepository.findById(request.authorId())
-                .orElseThrow(() -> new UserNotFoundException(request.authorId()));
+        Long authorId = SecurityUtils.getCurrentUserId();
+        User author = userRepository.findById(authorId)
+                .orElseThrow(() -> new UserNotFoundException(authorId));
         if (request.images() == null || request.images().isEmpty()) {
             throw new PostMustHaveImageException();
         }
@@ -79,6 +82,9 @@ public class PostService {
 
     public Post updatePost(Long id, PostUpdateRequest request) {
         Post post = getPostById(id);
+        if (!SecurityUtils.isCurrentUserOrAdmin(post.getAuthor().getId())) {
+            throw new AccessDeniedException("You can only edit your own posts");
+        }
         post.setContent(request.content());
         Post saved = postRepository.save(post);
         activityLogService.record(post.getAuthor(), ActivityAction.POST_UPDATED, "Post updated: " + id);
@@ -88,6 +94,9 @@ public class PostService {
 
     public void deletePost(Long id) {
         Post post = getPostById(id);
+        if (!SecurityUtils.isCurrentUserOrAdmin(post.getAuthor().getId())) {
+            throw new AccessDeniedException("You can only delete your own posts");
+        }
         postRepository.deleteById(id);
         activityLogService.record(post.getAuthor(), ActivityAction.POST_DELETED, "Post deleted: " + id);
         log.info("Post deleted: id={}", id);

@@ -11,11 +11,16 @@ import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException
 import com.socialmediaapp.socialmediaapp.content.repository.PostImageRepository;
 import com.socialmediaapp.socialmediaapp.content.repository.PostRepository;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.List;
 import java.util.Optional;
@@ -41,15 +46,28 @@ class PostImageServiceTest {
 
     private PostImageService postImageService;
 
+    private User author;
     private Post post;
     private PostImage image;
 
     @BeforeEach
     void setUp() {
         postImageService = new PostImageService(postImageRepository, postRepository, activityLogService);
-        User author = User.builder().id(1L).username("alice").build();
+        author = User.builder().id(1L).username("alice").build();
         post = Post.builder().id(1L).author(author).content("hi").build();
         image = PostImage.builder().id(1L).post(post).storageKey("a.png").activeFilter(ImageFilter.NONE).build();
+        authenticateAs(1L, "ROLE_USER");
+    }
+
+    @AfterEach
+    void tearDown() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private void authenticateAs(Long userId, String... authorities) {
+        var grantedAuthorities = List.of(authorities).stream().map(SimpleGrantedAuthority::new).toList();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(userId, null, grantedAuthorities));
     }
 
     @Test
@@ -83,6 +101,30 @@ class PostImageServiceTest {
                 .isInstanceOf(PostNotFoundException.class);
 
         verify(postImageRepository, never()).save(any());
+    }
+
+    @Test
+    void addImage_throwsWhenNotOwnerAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", null);
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postImageService.addImage(1L, request))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(postImageRepository, never()).save(any());
+    }
+
+    @Test
+    void addImage_succeedsWhenAdminButNotOwner() {
+        authenticateAs(2L, "ROLE_ADMIN");
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", ImageFilter.CONTRAST);
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postImageRepository.save(any(PostImage.class))).thenReturn(image);
+
+        PostImage result = postImageService.addImage(1L, request);
+
+        assertThat(result.getPost()).isEqualTo(post);
     }
 
     @Test
@@ -138,6 +180,28 @@ class PostImageServiceTest {
     }
 
     @Test
+    void updateFilter_throwsWhenNotOwnerAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+        when(postImageRepository.findById(1L)).thenReturn(Optional.of(image));
+
+        assertThatThrownBy(() -> postImageService.updateFilter(1L, 1L, new PostImageUpdateRequest(ImageFilter.SEPIA)))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(postImageRepository, never()).save(any());
+    }
+
+    @Test
+    void updateFilter_succeedsWhenAdminButNotOwner() {
+        authenticateAs(2L, "ROLE_ADMIN");
+        when(postImageRepository.findById(1L)).thenReturn(Optional.of(image));
+        when(postImageRepository.save(image)).thenReturn(image);
+
+        PostImage result = postImageService.updateFilter(1L, 1L, new PostImageUpdateRequest(ImageFilter.VINTAGE));
+
+        assertThat(result.getActiveFilter()).isEqualTo(ImageFilter.VINTAGE);
+    }
+
+    @Test
     void deleteImage_deletesWhenExists() {
         when(postImageRepository.findById(1L)).thenReturn(Optional.of(image));
 
@@ -154,5 +218,26 @@ class PostImageServiceTest {
                 .isInstanceOf(PostImageNotFoundException.class);
 
         verify(postImageRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteImage_throwsWhenNotOwnerAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+        when(postImageRepository.findById(1L)).thenReturn(Optional.of(image));
+
+        assertThatThrownBy(() -> postImageService.deleteImage(1L, 1L))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(postImageRepository, never()).deleteById(any());
+    }
+
+    @Test
+    void deleteImage_succeedsWhenAdminButNotOwner() {
+        authenticateAs(2L, "ROLE_ADMIN");
+        when(postImageRepository.findById(1L)).thenReturn(Optional.of(image));
+
+        postImageService.deleteImage(1L, 1L);
+
+        verify(postImageRepository).deleteById(1L);
     }
 }

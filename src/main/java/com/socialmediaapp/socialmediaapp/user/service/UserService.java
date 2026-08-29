@@ -5,11 +5,13 @@ import com.socialmediaapp.socialmediaapp.activity.ActivityLogService;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateEmailException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateUsernameException;
+import com.socialmediaapp.socialmediaapp.security.SecurityUtils;
 import com.socialmediaapp.socialmediaapp.user.exception.InvalidCurrentPasswordException;
 import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -54,6 +56,9 @@ public class UserService {
     }
 
     public User updateUser(Long id, User updates) {
+        if (!SecurityUtils.isCurrentUserOrAdmin(id)) {
+            throw new AccessDeniedException("You can only edit your own profile");
+        }
         User existing = getUserById(id);
         existing.setBio(updates.getBio());
         existing.setAvatarUrl(updates.getAvatarUrl());
@@ -61,6 +66,9 @@ public class UserService {
     }
 
     public User changeEmail(Long id, String newEmail) {
+        if (!SecurityUtils.isCurrentUserOrAdmin(id)) {
+            throw new AccessDeniedException("You can only change your own email");
+        }
         User user = getUserById(id);
         userRepository.findByEmail(newEmail).ifPresent(existing -> {
             if (!existing.getId().equals(id)) {
@@ -75,6 +83,9 @@ public class UserService {
     }
 
     public void changePassword(Long id, String currentPassword, String newPassword) {
+        if (!SecurityUtils.isCurrentUserOrAdmin(id)) {
+            throw new AccessDeniedException("You can only change your own password");
+        }
         User user = getUserById(id);
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
             throw new InvalidCurrentPasswordException();
@@ -86,6 +97,9 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
+        if (!SecurityUtils.isCurrentUserOrAdmin(id)) {
+            throw new AccessDeniedException("You can only delete your own account");
+        }
         User user = getUserById(id);
         activityLogService.record(user, ActivityAction.USER_DELETED, "User deleted: " + user.getUsername());
         userRepository.delete(user);

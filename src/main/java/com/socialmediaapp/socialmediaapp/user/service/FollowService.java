@@ -4,6 +4,7 @@ import com.socialmediaapp.socialmediaapp.activity.ActivityAction;
 import com.socialmediaapp.socialmediaapp.activity.ActivityLogService;
 import com.socialmediaapp.socialmediaapp.notification.entity.NotificationType;
 import com.socialmediaapp.socialmediaapp.notification.service.NotificationService;
+import com.socialmediaapp.socialmediaapp.security.SecurityUtils;
 import com.socialmediaapp.socialmediaapp.user.entity.Follow;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateFollowException;
@@ -30,7 +31,8 @@ public class FollowService {
     private final ActivityLogService activityLogService;
     private final NotificationService notificationService;
 
-    public Follow follow(Long followerId, Long followingId) {
+    public Follow follow(Long followingId) {
+        Long followerId = SecurityUtils.getCurrentUserId();
         if (followerId.equals(followingId)) {
             throw new SelfFollowException();
         }
@@ -52,7 +54,8 @@ public class FollowService {
         return saved;
     }
 
-    public void unfollow(Long followerId, Long followingId) {
+    public void unfollow(Long followingId) {
+        Long followerId = SecurityUtils.getCurrentUserId();
         Follow follow = followRepository.findByFollowerIdAndFollowingId(followerId, followingId)
                 .orElseThrow(() -> new FollowNotFoundException(followerId, followingId));
         followRepository.delete(follow);

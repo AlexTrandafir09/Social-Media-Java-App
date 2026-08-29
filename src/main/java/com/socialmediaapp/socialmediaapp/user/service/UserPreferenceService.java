@@ -1,11 +1,13 @@
 package com.socialmediaapp.socialmediaapp.user.service;
 
+import com.socialmediaapp.socialmediaapp.security.SecurityUtils;
 import com.socialmediaapp.socialmediaapp.user.entity.User;
 import com.socialmediaapp.socialmediaapp.user.entity.UserPreference;
 import com.socialmediaapp.socialmediaapp.user.exception.UserPreferenceNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserPreferenceRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,9 @@ public class UserPreferenceService {
     }
 
     public UserPreference update(Long userId, boolean notifyOnLike, boolean notifyOnComment, boolean notifyOnFollow) {
+        if (!SecurityUtils.isCurrentUserOrAdmin(userId)) {
+            throw new AccessDeniedException("You can only update your own preferences");
+        }
         UserPreference preference = getByUserId(userId);
         preference.setNotifyOnLike(notifyOnLike);
         preference.setNotifyOnComment(notifyOnComment);

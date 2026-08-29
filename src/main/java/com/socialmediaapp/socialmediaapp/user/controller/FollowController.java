@@ -20,13 +20,13 @@ public class FollowController {
 
     @PostMapping
     public ResponseEntity<Follow> follow(@Valid @RequestBody FollowRequest request) {
-        Follow follow = followService.follow(request.followerId(), request.followingId());
+        Follow follow = followService.follow(request.followingId());
         return ResponseEntity.status(HttpStatus.CREATED).body(follow);
     }
 
     @DeleteMapping
-    public ResponseEntity<Void> unfollow(@RequestParam Long followerId, @RequestParam Long followingId) {
-        followService.unfollow(followerId, followingId);
+    public ResponseEntity<Void> unfollow(@RequestParam Long followingId) {
+        followService.unfollow(followingId);
         return ResponseEntity.noContent().build();
     }
 
