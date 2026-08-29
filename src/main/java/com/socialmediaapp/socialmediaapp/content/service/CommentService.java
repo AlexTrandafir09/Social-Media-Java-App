@@ -15,10 +15,10 @@ import com.socialmediaapp.socialmediaapp.user.exception.UserNotFoundException;
 import com.socialmediaapp.socialmediaapp.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Slf4j
 @Service
@@ -54,8 +54,8 @@ public class CommentService {
     }
 
     @Transactional(readOnly = true)
-    public List<Comment> getCommentsForPost(Long postId) {
-        return commentRepository.findByPostId(postId);
+    public Page<Comment> getCommentsForPost(Long postId, Pageable pageable) {
+        return commentRepository.findByPostId(postId, pageable);
     }
 
     public Comment updateComment(Long id, CommentUpdateRequest request) {

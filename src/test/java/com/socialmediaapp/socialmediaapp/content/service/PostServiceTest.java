@@ -18,6 +18,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -121,12 +125,13 @@ class PostServiceTest {
     }
 
     @Test
-    void getAllPosts_returnsList() {
-        when(postRepository.findAll()).thenReturn(List.of(post));
+    void getAllPosts_returnsPage() {
+        Pageable pageable = PageRequest.of(0, 20);
+        when(postRepository.findAll(pageable)).thenReturn(new PageImpl<>(List.of(post), pageable, 1));
 
-        List<Post> result = postService.getAllPosts();
+        Page<Post> result = postService.getAllPosts(pageable);
 
-        assertThat(result).containsExactly(post);
+        assertThat(result.getContent()).containsExactly(post);
     }
 
     @Test

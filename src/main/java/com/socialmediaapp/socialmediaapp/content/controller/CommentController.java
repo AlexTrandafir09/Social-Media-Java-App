@@ -6,11 +6,12 @@ import com.socialmediaapp.socialmediaapp.content.entity.Comment;
 import com.socialmediaapp.socialmediaapp.content.service.CommentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/comments")
@@ -31,8 +32,9 @@ public class CommentController {
     }
 
     @GetMapping("/post/{postId}")
-    public List<Comment> getCommentsForPost(@PathVariable Long postId) {
-        return commentService.getCommentsForPost(postId);
+    public Page<Comment> getCommentsForPost(@PathVariable Long postId,
+                                             @PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+        return commentService.getCommentsForPost(postId, pageable);
     }
 
     @PutMapping("/{id}")

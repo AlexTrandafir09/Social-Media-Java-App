@@ -17,6 +17,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -112,12 +116,13 @@ class CommentServiceTest {
     }
 
     @Test
-    void getCommentsForPost_returnsList() {
-        when(commentRepository.findByPostId(1L)).thenReturn(List.of(comment));
+    void getCommentsForPost_returnsPage() {
+        Pageable pageable = PageRequest.of(0, 20);
+        when(commentRepository.findByPostId(1L, pageable)).thenReturn(new PageImpl<>(List.of(comment), pageable, 1));
 
-        List<Comment> result = commentService.getCommentsForPost(1L);
+        Page<Comment> result = commentService.getCommentsForPost(1L, pageable);
 
-        assertThat(result).containsExactly(comment);
+        assertThat(result.getContent()).containsExactly(comment);
     }
 
     @Test
