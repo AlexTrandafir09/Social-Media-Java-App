@@ -7,6 +7,8 @@ import com.socialmediaapp.contentservice.content.entity.ImageFilter;
 import com.socialmediaapp.contentservice.content.entity.Post;
 import com.socialmediaapp.contentservice.content.exception.PostMustHaveImageException;
 import com.socialmediaapp.contentservice.content.exception.PostNotFoundException;
+import com.socialmediaapp.contentservice.content.repository.CommentRepository;
+import com.socialmediaapp.contentservice.content.repository.LikeRepository;
 import com.socialmediaapp.contentservice.content.repository.PostImageRepository;
 import com.socialmediaapp.contentservice.content.repository.PostRepository;
 import com.socialmediaapp.contentservice.messaging.ActivityEventPublisher;
@@ -46,6 +48,12 @@ class PostServiceTest {
     private PostImageRepository postImageRepository;
 
     @Mock
+    private CommentRepository commentRepository;
+
+    @Mock
+    private LikeRepository likeRepository;
+
+    @Mock
     private ActivityEventPublisher activityEventPublisher;
 
     private PostService postService;
@@ -54,7 +62,7 @@ class PostServiceTest {
 
     @BeforeEach
     void setUp() {
-        postService = new PostService(postRepository, postImageRepository, activityEventPublisher);
+        postService = new PostService(postRepository, postImageRepository, commentRepository, likeRepository, activityEventPublisher);
         post = Post.builder().id(1L).authorId(1L).content("hello").build();
         authenticateAs(1L, "ROLE_USER");
     }
@@ -195,6 +203,9 @@ class PostServiceTest {
 
         postService.deletePost(1L);
 
+        verify(likeRepository).deleteByPostId(1L);
+        verify(commentRepository).deleteByPostId(1L);
+        verify(postImageRepository).deleteByPostId(1L);
         verify(postRepository).deleteById(1L);
     }
 
@@ -217,6 +228,7 @@ class PostServiceTest {
                 .isInstanceOf(AccessDeniedException.class);
 
         verify(postRepository, never()).deleteById(any());
+        verify(postImageRepository, never()).deleteByPostId(any());
     }
 
     @Test

@@ -7,6 +7,8 @@ import com.socialmediaapp.contentservice.content.entity.Post;
 import com.socialmediaapp.contentservice.content.entity.PostImage;
 import com.socialmediaapp.contentservice.content.exception.PostMustHaveImageException;
 import com.socialmediaapp.contentservice.content.exception.PostNotFoundException;
+import com.socialmediaapp.contentservice.content.repository.CommentRepository;
+import com.socialmediaapp.contentservice.content.repository.LikeRepository;
 import com.socialmediaapp.contentservice.content.repository.PostImageRepository;
 import com.socialmediaapp.contentservice.content.repository.PostRepository;
 import com.socialmediaapp.contentservice.messaging.ActivityAction;
@@ -34,6 +36,8 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
+    private final CommentRepository commentRepository;
+    private final LikeRepository likeRepository;
     private final ActivityEventPublisher activityEventPublisher;
 
     public Post createPost(PostCreateRequest request) {
@@ -105,6 +109,9 @@ public class PostService {
         if (!SecurityUtils.isCurrentUserOrAdmin(post.getAuthorId())) {
             throw new AccessDeniedException("You can only delete your own posts");
         }
+        likeRepository.deleteByPostId(id);
+        commentRepository.deleteByPostId(id);
+        postImageRepository.deleteByPostId(id);
         postRepository.deleteById(id);
         activityEventPublisher.publish(new ActivityEvent(post.getAuthorId(), ActivityAction.POST_DELETED, "Post deleted: " + id));
         log.info("Post deleted: id={}", id);
