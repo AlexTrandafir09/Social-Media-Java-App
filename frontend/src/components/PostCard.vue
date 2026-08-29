@@ -3,9 +3,8 @@ import { ref } from 'vue'
 import { updatePost, deletePost, imageUrl } from '../api/posts'
 import { getComments, createComment, updateComment, deleteComment } from '../api/comments'
 import { likePost, unlikePost, getLikesForPost, countLikes } from '../api/likes'
-import { avatarUrl } from '../api/users'
-import { DEFAULT_AVATAR } from '../lib/defaultAvatar'
 import { authState } from '../stores/auth'
+import UserChip from './UserChip.vue'
 
 const props = defineProps({
   post: { type: Object, required: true },
@@ -14,11 +13,6 @@ const emit = defineEmits(['deleted'])
 
 const post = ref(props.post)
 const apiError = ref('')
-const authorAvatarSrc = ref(avatarUrl(props.post.authorId))
-
-function onAvatarError() {
-  authorAvatarSrc.value = DEFAULT_AVATAR
-}
 
 const editingPost = ref(false)
 const editContent = ref('')
@@ -137,10 +131,7 @@ function formatDate(iso) {
 <template>
   <article class="post-card">
     <p class="post-meta">
-      <router-link :to="`/users/${post.authorId}`" class="post-author">
-        <img :src="authorAvatarSrc" class="avatar-small" @error="onAvatarError" />
-        User #{{ post.authorId }}
-      </router-link>
+      <UserChip :user-id="post.authorId" />
       &middot; {{ formatDate(post.createdAt) }}
     </p>
 
@@ -174,7 +165,7 @@ function formatDate(iso) {
       <ul class="comment-list">
         <li v-for="comment in comments" :key="comment.id">
           <p class="post-meta">
-            <router-link :to="`/users/${comment.authorId}`">User #{{ comment.authorId }}</router-link>
+            <UserChip :user-id="comment.authorId" />
             &middot; {{ formatDate(comment.createdAt) }}
           </p>
           <template v-if="editingCommentId === comment.id">
