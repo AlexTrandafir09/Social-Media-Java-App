@@ -2,6 +2,7 @@ package com.socialmediaapp.userservice.common;
 
 import com.socialmediaapp.userservice.security.exception.InvalidCredentialsException;
 import com.socialmediaapp.userservice.security.exception.InvalidRefreshTokenException;
+import com.socialmediaapp.userservice.user.exception.AvatarNotFoundException;
 import com.socialmediaapp.userservice.user.exception.DuplicateEmailException;
 import com.socialmediaapp.userservice.user.exception.DuplicateUsernameException;
 import com.socialmediaapp.userservice.user.exception.InvalidCurrentPasswordException;
@@ -25,7 +26,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler({
             UserNotFoundException.class,
-            UserPreferenceNotFoundException.class
+            UserPreferenceNotFoundException.class,
+            AvatarNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException ex) {
         log.debug("Not found: {}", ex.getMessage());

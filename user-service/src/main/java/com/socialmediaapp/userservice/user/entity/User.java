@@ -54,7 +54,10 @@ public class User {
     @Size(max = 280)
     private String bio;
 
-    private String avatarUrl;
+    @JsonIgnore
+    private byte[] avatarData;
+
+    private String avatarContentType;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)

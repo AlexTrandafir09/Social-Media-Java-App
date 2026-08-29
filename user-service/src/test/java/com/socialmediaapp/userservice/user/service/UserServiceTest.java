@@ -2,6 +2,7 @@ package com.socialmediaapp.userservice.user.service;
 
 import com.socialmediaapp.userservice.messaging.ActivityEventPublisher;
 import com.socialmediaapp.userservice.user.entity.User;
+import com.socialmediaapp.userservice.user.exception.AvatarNotFoundException;
 import com.socialmediaapp.userservice.user.exception.DuplicateEmailException;
 import com.socialmediaapp.userservice.user.exception.DuplicateUsernameException;
 import com.socialmediaapp.userservice.user.exception.InvalidCurrentPasswordException;
@@ -133,10 +134,9 @@ class UserServiceTest {
     }
 
     @Test
-    void updateUser_updatesBioAndAvatar() {
+    void updateUser_updatesBio() {
         User updates = User.builder()
                 .bio("hello")
-                .avatarUrl("avatar.png")
                 .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -145,7 +145,6 @@ class UserServiceTest {
         User result = userService.updateUser(1L, updates);
 
         assertThat(result.getBio()).isEqualTo("hello");
-        assertThat(result.getAvatarUrl()).isEqualTo("avatar.png");
         verify(userRepository).save(user);
     }
 
@@ -173,13 +172,53 @@ class UserServiceTest {
     @Test
     void updateUser_succeedsWhenAdminButNotSelf() {
         authenticateAs(2L, "ROLE_ADMIN");
-        User updates = User.builder().bio("hello").avatarUrl("avatar.png").build();
+        User updates = User.builder().bio("hello").build();
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
 
         User result = userService.updateUser(1L, updates);
 
         assertThat(result.getBio()).isEqualTo("hello");
+    }
+
+    @Test
+    void updateAvatar_decodesAndSavesAvatar() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.save(user)).thenReturn(user);
+
+        User result = userService.updateAvatar(1L, "image/png", "dGVzdC1pbWFnZS1ieXRlcw==");
+
+        assertThat(result.getAvatarContentType()).isEqualTo("image/png");
+        assertThat(result.getAvatarData()).isEqualTo("test-image-bytes".getBytes());
+    }
+
+    @Test
+    void updateAvatar_throwsWhenNotSelfAndNotAdmin() {
+        authenticateAs(2L, "ROLE_USER");
+
+        assertThatThrownBy(() -> userService.updateAvatar(1L, "image/png", "dGVzdC1pbWFnZS1ieXRlcw=="))
+                .isInstanceOf(AccessDeniedException.class);
+
+        verify(userRepository, never()).save(any());
+    }
+
+    @Test
+    void getUserWithAvatar_returnsUserWhenAvatarSet() {
+        user.setAvatarData("test-image-bytes".getBytes());
+        user.setAvatarContentType("image/png");
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        User result = userService.getUserWithAvatar(1L);
+
+        assertThat(result).isEqualTo(user);
+    }
+
+    @Test
+    void getUserWithAvatar_throwsWhenNoAvatarSet() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        assertThatThrownBy(() -> userService.getUserWithAvatar(1L))
+                .isInstanceOf(AvatarNotFoundException.class);
     }
 
     @Test

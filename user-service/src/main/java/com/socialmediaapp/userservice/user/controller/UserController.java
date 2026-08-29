@@ -1,5 +1,6 @@
 package com.socialmediaapp.userservice.user.controller;
 
+import com.socialmediaapp.userservice.user.dto.AvatarUploadRequest;
 import com.socialmediaapp.userservice.user.dto.ChangeEmailRequest;
 import com.socialmediaapp.userservice.user.dto.ChangePasswordRequest;
 import com.socialmediaapp.userservice.user.dto.UserUpdateRequest;
@@ -7,6 +8,7 @@ import com.socialmediaapp.userservice.user.entity.User;
 import com.socialmediaapp.userservice.user.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,7 +42,6 @@ public class UserController {
     public User updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest request) {
         User updates = User.builder()
                 .bio(request.bio())
-                .avatarUrl(request.avatarUrl())
                 .build();
         return userService.updateUser(id, updates);
     }
@@ -54,6 +55,19 @@ public class UserController {
     public ResponseEntity<Void> changePassword(@PathVariable Long id, @Valid @RequestBody ChangePasswordRequest request) {
         userService.changePassword(id, request.currentPassword(), request.newPassword());
         return ResponseEntity.noContent().build();
+    }
+
+    @PutMapping("/{id}/avatar")
+    public User updateAvatar(@PathVariable Long id, @Valid @RequestBody AvatarUploadRequest request) {
+        return userService.updateAvatar(id, request.contentType(), request.data());
+    }
+
+    @GetMapping("/{id}/avatar/file")
+    public ResponseEntity<byte[]> getAvatarFile(@PathVariable Long id) {
+        User user = userService.getUserWithAvatar(id);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(user.getAvatarContentType()))
+                .body(user.getAvatarData());
     }
 
     @DeleteMapping("/{id}")

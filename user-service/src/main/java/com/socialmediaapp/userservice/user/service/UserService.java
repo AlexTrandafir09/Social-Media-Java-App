@@ -5,6 +5,7 @@ import com.socialmediaapp.userservice.messaging.ActivityEvent;
 import com.socialmediaapp.userservice.messaging.ActivityEventPublisher;
 import com.socialmediaapp.userservice.security.SecurityUtils;
 import com.socialmediaapp.userservice.user.entity.User;
+import com.socialmediaapp.userservice.user.exception.AvatarNotFoundException;
 import com.socialmediaapp.userservice.user.exception.DuplicateEmailException;
 import com.socialmediaapp.userservice.user.exception.DuplicateUsernameException;
 import com.socialmediaapp.userservice.user.exception.InvalidCurrentPasswordException;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -62,8 +64,26 @@ public class UserService {
         }
         User existing = getUserById(id);
         existing.setBio(updates.getBio());
-        existing.setAvatarUrl(updates.getAvatarUrl());
         return userRepository.save(existing);
+    }
+
+    public User updateAvatar(Long id, String contentType, String base64Data) {
+        if (!SecurityUtils.isCurrentUserOrAdmin(id)) {
+            throw new AccessDeniedException("You can only change your own avatar");
+        }
+        User user = getUserById(id);
+        user.setAvatarContentType(contentType);
+        user.setAvatarData(Base64.getDecoder().decode(base64Data));
+        return userRepository.save(user);
+    }
+
+    @Transactional(readOnly = true)
+    public User getUserWithAvatar(Long id) {
+        User user = getUserById(id);
+        if (user.getAvatarData() == null) {
+            throw new AvatarNotFoundException(id);
+        }
+        return user;
     }
 
     public User changeEmail(Long id, String newEmail) {
