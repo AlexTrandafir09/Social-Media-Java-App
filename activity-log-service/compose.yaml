@@ -1,0 +1,14 @@
+services:
+  activity-log-db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${DB_USERNAME:-devuser}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-devpass}
+      POSTGRES_DB: activitylogservice
+    ports:
+      - "5434:5432"
+    volumes:
+      - activity-log-db-data:/var/lib/postgresql/data
+
+volumes:
+  activity-log-db-data:
