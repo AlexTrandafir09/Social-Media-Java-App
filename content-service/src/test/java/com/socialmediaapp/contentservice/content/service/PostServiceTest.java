@@ -139,6 +139,17 @@ class PostServiceTest {
     }
 
     @Test
+    void getPostsByAuthors_returnsPageFilteredByAuthorIds() {
+        Pageable pageable = PageRequest.of(0, 20);
+        List<Long> authorIds = List.of(1L, 2L);
+        when(postRepository.findByAuthorIdIn(authorIds, pageable)).thenReturn(new PageImpl<>(List.of(post), pageable, 1));
+
+        Page<Post> result = postService.getPostsByAuthors(authorIds, pageable);
+
+        assertThat(result.getContent()).containsExactly(post);
+    }
+
+    @Test
     void updatePost_updatesContent() {
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(postRepository.save(post)).thenReturn(post);

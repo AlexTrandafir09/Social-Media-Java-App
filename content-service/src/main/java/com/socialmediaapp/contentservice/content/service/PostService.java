@@ -72,6 +72,14 @@ public class PostService {
         return postRepository.findAll(pageable);
     }
 
+    // authorIds narrows the feed to specific authors (e.g. "people I follow" -
+    // that list is resolved by the caller, since this service doesn't know
+    // about follow relationships).
+    @Transactional(readOnly = true)
+    public Page<Post> getPostsByAuthors(List<Long> authorIds, Pageable pageable) {
+        return postRepository.findByAuthorIdIn(authorIds, pageable);
+    }
+
     @Transactional(readOnly = true)
     public List<Post> getPostsByAuthor(Long authorId) {
         return postRepository.findByAuthorId(authorId);

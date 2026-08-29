@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -41,7 +42,11 @@ public class PostController {
     }
 
     @GetMapping
-    public Page<Post> getAllPosts(@PageableDefault(size = 20, sort = "createdAt") Pageable pageable) {
+    public Page<Post> getAllPosts(@PageableDefault(size = 20, sort = "createdAt") Pageable pageable,
+                                   @RequestParam(required = false) List<Long> authorIds) {
+        if (authorIds != null && !authorIds.isEmpty()) {
+            return postService.getPostsByAuthors(authorIds, pageable);
+        }
         return postService.getAllPosts(pageable);
     }
 
