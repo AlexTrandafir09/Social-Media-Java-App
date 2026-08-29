@@ -34,7 +34,7 @@ class PostCreationIntegrationTest {
     @Test
     void createPost_returnsCreatedPostWithNestedImagesAndNoProxyLeak() throws Exception {
         String body = """
-                {"content": "hello world", "images": [{"storageKey": "a.png", "filter": "SEPIA"}]}
+                {"content": "hello world", "images": [{"storageKey": "a.png", "contentType": "image/png", "data": "dGVzdC1pbWFnZS1ieXRlcw==", "filter": "SEPIA"}]}
                 """;
 
         MvcResult result = mockMvc.perform(post("/api/posts")
@@ -49,7 +49,7 @@ class PostCreationIntegrationTest {
                 .andReturn();
 
         String responseBody = result.getResponse().getContentAsString();
-        assertThat(responseBody).doesNotContain("hibernateLazyInitializer", "handler");
+        assertThat(responseBody).doesNotContain("hibernateLazyInitializer", "handler", "dGVzdC1pbWFnZS1ieXRlcw==");
     }
 
     @Test

@@ -22,6 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,6 +52,8 @@ public class PostService {
                 .map(img -> PostImage.builder()
                         .post(savedPost)
                         .storageKey(img.storageKey())
+                        .contentType(img.contentType())
+                        .data(Base64.getDecoder().decode(img.data()))
                         .activeFilter(img.filter() != null ? img.filter() : ImageFilter.NONE)
                         .build())
                 .collect(Collectors.toCollection(ArrayList::new));

@@ -36,6 +36,13 @@ public class PostImage {
     @Column(nullable = false)
     private String storageKey;
 
+    @Column(nullable = false)
+    @JsonIgnore
+    private byte[] data;
+
+    @Column(nullable = false)
+    private String contentType;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default

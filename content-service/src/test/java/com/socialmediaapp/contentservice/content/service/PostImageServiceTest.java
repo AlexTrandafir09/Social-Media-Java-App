@@ -69,7 +69,7 @@ class PostImageServiceTest {
 
     @Test
     void addImage_savesWhenPostExists() {
-        PostImageCreateRequest request = new PostImageCreateRequest("a.png", ImageFilter.CONTRAST);
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", "image/png", "dGVzdC1pbWFnZS1ieXRlcw==", ImageFilter.CONTRAST);
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(postImageRepository.save(any(PostImage.class))).thenReturn(image);
 
@@ -80,7 +80,7 @@ class PostImageServiceTest {
 
     @Test
     void addImage_defaultsToNoneFilterWhenNull() {
-        PostImageCreateRequest request = new PostImageCreateRequest("a.png", null);
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", "image/png", "dGVzdC1pbWFnZS1ieXRlcw==", null);
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(postImageRepository.save(any(PostImage.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -91,7 +91,7 @@ class PostImageServiceTest {
 
     @Test
     void addImage_throwsWhenPostNotFound() {
-        PostImageCreateRequest request = new PostImageCreateRequest("a.png", null);
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", "image/png", "dGVzdC1pbWFnZS1ieXRlcw==", null);
         when(postRepository.findById(1L)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> postImageService.addImage(1L, request))
@@ -103,7 +103,7 @@ class PostImageServiceTest {
     @Test
     void addImage_throwsWhenNotOwnerAndNotAdmin() {
         authenticateAs(2L, "ROLE_USER");
-        PostImageCreateRequest request = new PostImageCreateRequest("a.png", null);
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", "image/png", "dGVzdC1pbWFnZS1ieXRlcw==", null);
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
 
         assertThatThrownBy(() -> postImageService.addImage(1L, request))
@@ -115,7 +115,7 @@ class PostImageServiceTest {
     @Test
     void addImage_succeedsWhenAdminButNotOwner() {
         authenticateAs(2L, "ROLE_ADMIN");
-        PostImageCreateRequest request = new PostImageCreateRequest("a.png", ImageFilter.CONTRAST);
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", "image/png", "dGVzdC1pbWFnZS1ieXRlcw==", ImageFilter.CONTRAST);
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(postImageRepository.save(any(PostImage.class))).thenReturn(image);
 

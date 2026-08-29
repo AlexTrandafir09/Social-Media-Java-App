@@ -3,6 +3,8 @@ package com.socialmediaapp.contentservice.content.controller;
 import com.socialmediaapp.contentservice.content.dto.PostCreateRequest;
 import com.socialmediaapp.contentservice.content.dto.PostUpdateRequest;
 import com.socialmediaapp.contentservice.content.entity.Post;
+import com.socialmediaapp.contentservice.content.entity.PostImage;
+import com.socialmediaapp.contentservice.content.service.PostImageService;
 import com.socialmediaapp.contentservice.content.service.PostService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -10,6 +12,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -29,6 +32,7 @@ import java.util.List;
 public class PostController {
 
     private final PostService postService;
+    private final PostImageService postImageService;
 
     @PostMapping
     public ResponseEntity<Post> createPost(@Valid @RequestBody PostCreateRequest request) {
@@ -64,5 +68,13 @@ public class PostController {
     public ResponseEntity<Void> deletePost(@PathVariable Long id) {
         postService.deletePost(id);
         return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/images/{imageId}/file")
+    public ResponseEntity<byte[]> getImageFile(@PathVariable Long imageId) {
+        PostImage image = postImageService.getImageById(imageId);
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(image.getContentType()))
+                .body(image.getData());
     }
 }

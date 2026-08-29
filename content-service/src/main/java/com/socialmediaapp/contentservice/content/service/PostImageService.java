@@ -19,6 +19,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -40,6 +41,8 @@ public class PostImageService {
         PostImage image = PostImage.builder()
                 .post(post)
                 .storageKey(request.storageKey())
+                .contentType(request.contentType())
+                .data(Base64.getDecoder().decode(request.data()))
                 .activeFilter(request.filter() != null ? request.filter() : ImageFilter.NONE)
                 .build();
         PostImage saved = postImageRepository.save(image);
@@ -54,6 +57,12 @@ public class PostImageService {
                 .orElseThrow(() -> new PostImageNotFoundException(id));
         requireBelongsToPost(image, postId);
         return image;
+    }
+
+    @Transactional(readOnly = true)
+    public PostImage getImageById(Long id) {
+        return postImageRepository.findById(id)
+                .orElseThrow(() -> new PostImageNotFoundException(id));
     }
 
     @Transactional(readOnly = true)

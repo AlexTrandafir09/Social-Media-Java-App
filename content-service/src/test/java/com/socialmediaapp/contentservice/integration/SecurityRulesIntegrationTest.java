@@ -38,7 +38,7 @@ class SecurityRulesIntegrationTest {
         String postBody = mockMvc.perform(post("/api/posts")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + aliceToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"content\":\"alice's post\",\"images\":[{\"storageKey\":\"a.png\"}]}"))
+                        .content("{\"content\":\"alice's post\",\"images\":[{\"storageKey\":\"a.png\",\"contentType\":\"image/png\",\"data\":\"dGVzdC1pbWFnZS1ieXRlcw==\"}]}"))
                 .andReturn().getResponse().getContentAsString();
         Long postId = Long.valueOf(postBody.split("\"id\":")[1].split(",")[0]);
 
@@ -64,7 +64,7 @@ class SecurityRulesIntegrationTest {
         String postBody = mockMvc.perform(post("/api/posts")
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + aliceToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"content\":\"alice's post\",\"images\":[{\"storageKey\":\"a.png\"}]}"))
+                        .content("{\"content\":\"alice's post\",\"images\":[{\"storageKey\":\"a.png\",\"contentType\":\"image/png\",\"data\":\"dGVzdC1pbWFnZS1ieXRlcw==\"}]}"))
                 .andReturn().getResponse().getContentAsString();
         Long postId = Long.valueOf(postBody.split("\"id\":")[1].split(",")[0]);
 

@@ -72,7 +72,7 @@ class PostServiceTest {
 
     @Test
     void createPost_savesPostAndImages() {
-        PostCreateRequest request = new PostCreateRequest("hello", List.of(new PostImageInput("a.png", ImageFilter.CONTRAST)));
+        PostCreateRequest request = new PostCreateRequest("hello", List.of(new PostImageInput("a.png", "image/png", "dGVzdC1pbWFnZS1ieXRlcw==", ImageFilter.CONTRAST)));
         when(postRepository.save(any(Post.class))).thenReturn(post);
         when(postImageRepository.saveAll(anyList())).thenAnswer(inv -> inv.getArgument(0));
 
