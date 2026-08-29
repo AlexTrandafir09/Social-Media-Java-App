@@ -16,6 +16,7 @@ import { getPostsByAuthor } from '../api/posts'
 import { getFollowing, follow, unfollow } from '../api/follows'
 import { authState, clearSession } from '../stores/auth'
 import { fileToBase64 } from '../lib/files'
+import { DEFAULT_AVATAR } from '../lib/defaultAvatar'
 import PostCard from '../components/PostCard.vue'
 
 const route = useRoute()
@@ -29,7 +30,11 @@ const posts = ref([])
 const isFollowing = ref(false)
 const apiError = ref('')
 const loading = ref(true)
-const hasAvatar = ref(true)
+const avatarSrc = ref('')
+
+function onAvatarLoadError() {
+  avatarSrc.value = DEFAULT_AVATAR
+}
 
 const profileForm = reactive({ bio: '' })
 const emailForm = reactive({ newEmail: '' })
@@ -44,7 +49,7 @@ const avatarPreviewUrl = ref('')
 async function load() {
   loading.value = true
   apiError.value = ''
-  hasAvatar.value = true
+  avatarSrc.value = avatarUrl(profileId.value)
   try {
     user.value = await getUser(profileId.value)
     posts.value = await getPostsByAuthor(profileId.value)
@@ -118,7 +123,7 @@ async function saveAvatar() {
   try {
     const data = await fileToBase64(avatarFile.value)
     await updateAvatar(profileId.value, avatarFile.value.type, data)
-    hasAvatar.value = true
+    avatarSrc.value = `${avatarUrl(profileId.value)}?t=${Date.now()}`
     avatarFile.value = null
     avatarPreviewUrl.value = ''
     savedMessage.value = 'Avatar updated'
@@ -176,7 +181,7 @@ async function removeAccount() {
   <div v-if="loading">Loading...</div>
   <p v-else-if="apiError" class="error-banner">{{ apiError }}</p>
   <div v-else-if="user">
-    <img v-if="hasAvatar" :src="avatarUrl(user.id)" class="avatar" @error="hasAvatar = false" />
+    <img :src="avatarSrc" class="avatar" @error="onAvatarLoadError" />
     <h1>{{ user.username }}</h1>
     <p v-if="user.bio">{{ user.bio }}</p>
     <p v-if="savedMessage" class="hint">{{ savedMessage }}</p>
