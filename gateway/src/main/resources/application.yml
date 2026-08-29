@@ -32,10 +32,38 @@ spring:
                 - name: Path
                   args:
                     pattern: /api/activity/**
-            - id: socialmediaapp
-              uri: lb://SOCIALMEDIAAPP
+            - id: user-service-auth
+              uri: lb://USER-SERVICE
+              order: 4
+              predicates:
+                - name: Path
+                  args:
+                    pattern: /api/auth/**
+            - id: user-service-users
+              uri: lb://USER-SERVICE
+              order: 5
+              predicates:
+                - name: Path
+                  args:
+                    pattern: /api/users/**
+            - id: content-service-posts
+              uri: lb://CONTENT-SERVICE
               order: 100
               predicates:
                 - name: Path
                   args:
-                    pattern: /api/**
+                    pattern: /api/posts/**
+            - id: content-service-comments
+              uri: lb://CONTENT-SERVICE
+              order: 101
+              predicates:
+                - name: Path
+                  args:
+                    pattern: /api/comments/**
+            - id: content-service-likes
+              uri: lb://CONTENT-SERVICE
+              order: 102
+              predicates:
+                - name: Path
+                  args:
+                    pattern: /api/likes/**
