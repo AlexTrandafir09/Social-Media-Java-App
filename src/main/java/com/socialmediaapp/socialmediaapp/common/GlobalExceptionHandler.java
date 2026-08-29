@@ -6,7 +6,6 @@ import com.socialmediaapp.socialmediaapp.content.exception.LikeNotFoundException
 import com.socialmediaapp.socialmediaapp.content.exception.PostImageNotFoundException;
 import com.socialmediaapp.socialmediaapp.content.exception.PostMustHaveImageException;
 import com.socialmediaapp.socialmediaapp.content.exception.PostNotFoundException;
-import com.socialmediaapp.socialmediaapp.notification.exception.NotificationNotFoundException;
 import com.socialmediaapp.socialmediaapp.security.exception.InvalidCredentialsException;
 import com.socialmediaapp.socialmediaapp.security.exception.InvalidRefreshTokenException;
 import com.socialmediaapp.socialmediaapp.user.exception.DuplicateEmailException;
@@ -42,8 +41,7 @@ public class GlobalExceptionHandler {
             PostNotFoundException.class,
             CommentNotFoundException.class,
             LikeNotFoundException.class,
-            PostImageNotFoundException.class,
-            NotificationNotFoundException.class
+            PostImageNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException ex) {
         log.debug("Not found: {}", ex.getMessage());
