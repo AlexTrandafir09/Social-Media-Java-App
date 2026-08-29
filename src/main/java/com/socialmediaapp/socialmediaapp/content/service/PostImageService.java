@@ -28,9 +28,9 @@ public class PostImageService {
     private final PostRepository postRepository;
     private final ActivityLogService activityLogService;
 
-    public PostImage addImage(PostImageCreateRequest request) {
-        Post post = postRepository.findById(request.postId())
-                .orElseThrow(() -> new PostNotFoundException(request.postId()));
+    public PostImage addImage(Long postId, PostImageCreateRequest request) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new PostNotFoundException(postId));
         PostImage image = PostImage.builder()
                 .post(post)
                 .storageKey(request.storageKey())
@@ -43,9 +43,11 @@ public class PostImageService {
     }
 
     @Transactional(readOnly = true)
-    public PostImage getImageById(Long id) {
-        return postImageRepository.findById(id)
+    public PostImage getImageById(Long postId, Long id) {
+        PostImage image = postImageRepository.findById(id)
                 .orElseThrow(() -> new PostImageNotFoundException(id));
+        requireBelongsToPost(image, postId);
+        return image;
     }
 
     @Transactional(readOnly = true)
@@ -53,18 +55,24 @@ public class PostImageService {
         return postImageRepository.findByPostId(postId);
     }
 
-    public PostImage updateFilter(Long id, PostImageUpdateRequest request) {
-        PostImage image = getImageById(id);
+    public PostImage updateFilter(Long postId, Long id, PostImageUpdateRequest request) {
+        PostImage image = getImageById(postId, id);
         image.setActiveFilter(request.filter());
         PostImage saved = postImageRepository.save(image);
         log.debug("Post image filter updated: id={}, filter={}", id, request.filter());
         return saved;
     }
 
-    public void deleteImage(Long id) {
-        PostImage image = getImageById(id);
+    public void deleteImage(Long postId, Long id) {
+        PostImage image = getImageById(postId, id);
         postImageRepository.deleteById(id);
         activityLogService.record(image.getPost().getAuthor(), ActivityAction.POST_IMAGE_DELETED, "Image deleted: " + id);
         log.debug("Post image deleted: id={}", id);
+    }
+
+    private void requireBelongsToPost(PostImage image, Long postId) {
+        if (!image.getPost().getId().equals(postId)) {
+            throw new PostImageNotFoundException(image.getId());
+        }
     }
 }

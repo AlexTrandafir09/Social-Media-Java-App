@@ -54,32 +54,32 @@ class PostImageServiceTest {
 
     @Test
     void addImage_savesWhenPostExists() {
-        PostImageCreateRequest request = new PostImageCreateRequest(1L, "a.png", ImageFilter.CONTRAST);
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", ImageFilter.CONTRAST);
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(postImageRepository.save(any(PostImage.class))).thenReturn(image);
 
-        PostImage result = postImageService.addImage(request);
+        PostImage result = postImageService.addImage(1L, request);
 
         assertThat(result.getPost()).isEqualTo(post);
     }
 
     @Test
     void addImage_defaultsToNoneFilterWhenNull() {
-        PostImageCreateRequest request = new PostImageCreateRequest(1L, "a.png", null);
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", null);
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
         when(postImageRepository.save(any(PostImage.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        PostImage result = postImageService.addImage(request);
+        PostImage result = postImageService.addImage(1L, request);
 
         assertThat(result.getActiveFilter()).isEqualTo(ImageFilter.NONE);
     }
 
     @Test
     void addImage_throwsWhenPostNotFound() {
-        PostImageCreateRequest request = new PostImageCreateRequest(1L, "a.png", null);
+        PostImageCreateRequest request = new PostImageCreateRequest("a.png", null);
         when(postRepository.findById(1L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postImageService.addImage(request))
+        assertThatThrownBy(() -> postImageService.addImage(1L, request))
                 .isInstanceOf(PostNotFoundException.class);
 
         verify(postImageRepository, never()).save(any());
@@ -89,7 +89,7 @@ class PostImageServiceTest {
     void getImageById_returnsImageWhenFound() {
         when(postImageRepository.findById(1L)).thenReturn(Optional.of(image));
 
-        PostImage result = postImageService.getImageById(1L);
+        PostImage result = postImageService.getImageById(1L, 1L);
 
         assertThat(result).isEqualTo(image);
     }
@@ -98,7 +98,15 @@ class PostImageServiceTest {
     void getImageById_throwsWhenNotFound() {
         when(postImageRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postImageService.getImageById(99L))
+        assertThatThrownBy(() -> postImageService.getImageById(1L, 99L))
+                .isInstanceOf(PostImageNotFoundException.class);
+    }
+
+    @Test
+    void getImageById_throwsWhenImageBelongsToDifferentPost() {
+        when(postImageRepository.findById(1L)).thenReturn(Optional.of(image));
+
+        assertThatThrownBy(() -> postImageService.getImageById(99L, 1L))
                 .isInstanceOf(PostImageNotFoundException.class);
     }
 
@@ -116,7 +124,7 @@ class PostImageServiceTest {
         when(postImageRepository.findById(1L)).thenReturn(Optional.of(image));
         when(postImageRepository.save(image)).thenReturn(image);
 
-        PostImage result = postImageService.updateFilter(1L, new PostImageUpdateRequest(ImageFilter.VINTAGE));
+        PostImage result = postImageService.updateFilter(1L, 1L, new PostImageUpdateRequest(ImageFilter.VINTAGE));
 
         assertThat(result.getActiveFilter()).isEqualTo(ImageFilter.VINTAGE);
     }
@@ -125,7 +133,7 @@ class PostImageServiceTest {
     void updateFilter_throwsWhenNotFound() {
         when(postImageRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postImageService.updateFilter(99L, new PostImageUpdateRequest(ImageFilter.SEPIA)))
+        assertThatThrownBy(() -> postImageService.updateFilter(1L, 99L, new PostImageUpdateRequest(ImageFilter.SEPIA)))
                 .isInstanceOf(PostImageNotFoundException.class);
     }
 
@@ -133,7 +141,7 @@ class PostImageServiceTest {
     void deleteImage_deletesWhenExists() {
         when(postImageRepository.findById(1L)).thenReturn(Optional.of(image));
 
-        postImageService.deleteImage(1L);
+        postImageService.deleteImage(1L, 1L);
 
         verify(postImageRepository).deleteById(1L);
     }
@@ -142,7 +150,7 @@ class PostImageServiceTest {
     void deleteImage_throwsWhenNotFound() {
         when(postImageRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postImageService.deleteImage(99L))
+        assertThatThrownBy(() -> postImageService.deleteImage(1L, 99L))
                 .isInstanceOf(PostImageNotFoundException.class);
 
         verify(postImageRepository, never()).deleteById(any());
