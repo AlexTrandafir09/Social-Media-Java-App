@@ -105,7 +105,6 @@ async function toggleFollow() {
     </Modal>
 
     <button v-if="!isOwnProfile" @click="toggleFollow">{{ isFollowing ? 'Unfollow' : 'Follow' }}</button>
-    <router-link v-else to="/settings" class="button-link">Settings</router-link>
 
     <h2>Posts</h2>
     <PostCard v-for="post in posts" :key="post.id" :post="post" @deleted="onPostDeleted" />

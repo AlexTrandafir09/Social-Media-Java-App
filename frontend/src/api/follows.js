@@ -1,11 +1,9 @@
 import { apiFetch } from './client'
 
-// Returns the list of Follow rows for people this user follows.
 export function getFollowing(userId) {
   return apiFetch(`/api/follows/following/${userId}`)
 }
 
-// Returns the list of Follow rows for people who follow this user.
 export function getFollowers(userId) {
   return apiFetch(`/api/follows/followers/${userId}`)
 }

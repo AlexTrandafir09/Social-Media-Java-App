@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onUnmounted, ref } from 'vue'
 import { getPosts } from '../api/posts'
 import { getFollowing } from '../api/follows'
 import { authState } from '../stores/auth'
@@ -7,10 +7,15 @@ import PostCard from '../components/PostCard.vue'
 
 const posts = ref([])
 const page = ref(0)
-const totalPages = ref(0)
+const hasMore = ref(true)
 const loading = ref(true)
+const loadingMore = ref(false)
 const apiError = ref('')
 const followingIds = ref([])
+const bottomSentinel = ref(null)
+
+let observer = null
+let scrollTimer = null
 
 async function resolveFeedAuthors() {
   const ownId = authState.user.id
@@ -19,27 +24,49 @@ async function resolveFeedAuthors() {
   return [ownId, ...followingIds.value]
 }
 
-async function loadPage(p) {
-  loading.value = true
+async function loadPage(p, append = false) {
+  if (append) loadingMore.value = true
+  else loading.value = true
   apiError.value = ''
   try {
     const authorIds = await resolveFeedAuthors()
     const result = await getPosts(p, 10, authorIds)
-    posts.value = result.content
+    posts.value = append ? posts.value.concat(result.content) : result.content
     page.value = result.number
-    totalPages.value = result.totalPages
+    hasMore.value = !result.last
   } catch (err) {
     apiError.value = err.message
   } finally {
     loading.value = false
+    loadingMore.value = false
   }
 }
-
-onMounted(() => loadPage(0))
 
 function onPostDeleted(postId) {
   posts.value = posts.value.filter((p) => p.id !== postId)
 }
+
+onMounted(() => {
+  loadPage(0)
+
+  observer = new IntersectionObserver((entries) => {
+    if (entries[0].isIntersecting) {
+      scrollTimer = setTimeout(() => {
+        if (hasMore.value && !loadingMore.value) {
+          loadPage(page.value + 1, true)
+        }
+      }, 1000)
+    } else {
+      clearTimeout(scrollTimer)
+    }
+  })
+  observer.observe(bottomSentinel.value)
+})
+
+onUnmounted(() => {
+  clearTimeout(scrollTimer)
+  observer?.disconnect()
+})
 </script>
 
 <template>
@@ -58,10 +85,7 @@ function onPostDeleted(postId) {
 
     <PostCard v-for="post in posts" :key="post.id" :post="post" @deleted="onPostDeleted" />
 
-    <div v-if="totalPages > 1" class="pagination">
-      <button :disabled="page === 0" @click="loadPage(page - 1)">Previous</button>
-      <span>Page {{ page + 1 }} of {{ totalPages }}</span>
-      <button :disabled="page + 1 >= totalPages" @click="loadPage(page + 1)">Next</button>
-    </div>
+    <p v-if="loadingMore">Loading more...</p>
+    <div ref="bottomSentinel" class="scroll-sentinel"></div>
   </div>
 </template>

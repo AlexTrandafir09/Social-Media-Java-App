@@ -24,8 +24,8 @@ export function imageUrl(imageId) {
   return `http://localhost:8090/api/posts/images/${imageId}/file`
 }
 
-export function updatePost(id, content) {
-  return apiFetch(`/api/posts/${id}`, { method: 'PUT', body: { content } })
+export function updatePost(id, content, keepImageIds, newImages) {
+  return apiFetch(`/api/posts/${id}`, { method: 'PUT', body: { content, keepImageIds, newImages } })
 }
 
 export function deletePost(id) {

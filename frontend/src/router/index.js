@@ -4,6 +4,7 @@ import LoginView from '../views/LoginView.vue'
 import RegisterView from '../views/RegisterView.vue'
 import FeedView from '../views/FeedView.vue'
 import CreatePostView from '../views/CreatePostView.vue'
+import EditPostView from '../views/EditPostView.vue'
 import UsersListView from '../views/UsersListView.vue'
 import ProfileView from '../views/ProfileView.vue'
 import SettingsView from '../views/SettingsView.vue'
@@ -14,6 +15,7 @@ import NotFoundView from '../views/NotFoundView.vue'
 const routes = [
   { path: '/', name: 'feed', component: FeedView, meta: { requiresAuth: true } },
   { path: '/posts/new', name: 'create-post', component: CreatePostView, meta: { requiresAuth: true } },
+  { path: '/posts/:id/edit', name: 'edit-post', component: EditPostView, meta: { requiresAuth: true } },
   { path: '/users', name: 'users', component: UsersListView, meta: { requiresAuth: true } },
   { path: '/users/:id', name: 'profile', component: ProfileView, meta: { requiresAuth: true } },
   { path: '/settings', name: 'settings', component: SettingsView, meta: { requiresAuth: true } },

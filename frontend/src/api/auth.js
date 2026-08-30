@@ -20,9 +20,6 @@ export function logout() {
   return apiFetch('/api/auth/logout', { method: 'POST' })
 }
 
-// The access token is a JWT: header.payload.signature, base64url-encoded.
-// Decoding it client-side (no verification - the backend already verified it
-// when it issued it) is enough to read the user id/username/role for the UI.
 export function decodeToken(token) {
   const payload = token.split('.')[1]
   const base64 = payload.replace(/-/g, '+').replace(/_/g, '/')

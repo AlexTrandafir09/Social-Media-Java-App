@@ -22,7 +22,6 @@ public class Notification {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // No FK: users live in a different service's database now.
     @Column(nullable = false)
     private Long recipientId;
 

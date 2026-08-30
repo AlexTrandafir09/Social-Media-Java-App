@@ -5,6 +5,7 @@ import com.socialmediaapp.contentservice.content.dto.PostImageInput;
 import com.socialmediaapp.contentservice.content.dto.PostUpdateRequest;
 import com.socialmediaapp.contentservice.content.entity.ImageFilter;
 import com.socialmediaapp.contentservice.content.entity.Post;
+import com.socialmediaapp.contentservice.content.entity.PostImage;
 import com.socialmediaapp.contentservice.content.exception.PostMustHaveImageException;
 import com.socialmediaapp.contentservice.content.exception.PostNotFoundException;
 import com.socialmediaapp.contentservice.content.repository.CommentRepository;
@@ -160,9 +161,10 @@ class PostServiceTest {
     @Test
     void updatePost_updatesContent() {
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postImageRepository.findByPostId(1L)).thenReturn(List.of(existingImage(1L)));
         when(postRepository.save(post)).thenReturn(post);
 
-        Post result = postService.updatePost(1L, new PostUpdateRequest("updated"));
+        Post result = postService.updatePost(1L, new PostUpdateRequest("updated", List.of(1L), List.of()));
 
         assertThat(result.getContent()).isEqualTo("updated");
     }
@@ -171,7 +173,7 @@ class PostServiceTest {
     void updatePost_throwsWhenNotFound() {
         when(postRepository.findById(99L)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> postService.updatePost(99L, new PostUpdateRequest("x")))
+        assertThatThrownBy(() -> postService.updatePost(99L, new PostUpdateRequest("x", List.of(1L), List.of())))
                 .isInstanceOf(PostNotFoundException.class);
     }
 
@@ -180,7 +182,7 @@ class PostServiceTest {
         authenticateAs(2L, "ROLE_USER");
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
 
-        assertThatThrownBy(() -> postService.updatePost(1L, new PostUpdateRequest("x")))
+        assertThatThrownBy(() -> postService.updatePost(1L, new PostUpdateRequest("x", List.of(1L), List.of())))
                 .isInstanceOf(AccessDeniedException.class);
 
         verify(postRepository, never()).save(any());
@@ -190,11 +192,49 @@ class PostServiceTest {
     void updatePost_succeedsWhenAdminButNotOwner() {
         authenticateAs(2L, "ROLE_ADMIN");
         when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postImageRepository.findByPostId(1L)).thenReturn(List.of(existingImage(1L)));
         when(postRepository.save(post)).thenReturn(post);
 
-        Post result = postService.updatePost(1L, new PostUpdateRequest("updated"));
+        Post result = postService.updatePost(1L, new PostUpdateRequest("updated", List.of(1L), List.of()));
 
         assertThat(result.getContent()).isEqualTo("updated");
+    }
+
+    @Test
+    void updatePost_throwsWhenNoImagesRemain() {
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+
+        assertThatThrownBy(() -> postService.updatePost(1L, new PostUpdateRequest("x", List.of(), List.of())))
+                .isInstanceOf(PostMustHaveImageException.class);
+    }
+
+    @Test
+    void updatePost_removesImagesNotInKeepList() {
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postImageRepository.findByPostId(1L)).thenReturn(List.of(existingImage(1L), existingImage(2L)));
+        when(postRepository.save(post)).thenReturn(post);
+
+        postService.updatePost(1L, new PostUpdateRequest("updated", List.of(1L), List.of()));
+
+        verify(postImageRepository).deleteById(2L);
+        verify(postImageRepository, never()).deleteById(1L);
+    }
+
+    @Test
+    void updatePost_addsNewImages() {
+        when(postRepository.findById(1L)).thenReturn(Optional.of(post));
+        when(postImageRepository.findByPostId(1L)).thenReturn(List.of());
+        when(postRepository.save(post)).thenReturn(post);
+
+        PostImageInput newImage = new PostImageInput("b.png", "image/png", "dGVzdA==", ImageFilter.NONE);
+        Post result = postService.updatePost(1L, new PostUpdateRequest("updated", List.of(), List.of(newImage)));
+
+        verify(postImageRepository).saveAll(anyList());
+        assertThat(result.getImages()).hasSize(1);
+    }
+
+    private PostImage existingImage(Long id) {
+        return PostImage.builder().id(id).post(post).storageKey("a.png").build();
     }
 
     @Test

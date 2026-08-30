@@ -1,17 +1,43 @@
 <script setup>
 import { reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { createPost } from '../api/posts'
+import { useRoute, useRouter } from 'vue-router'
+import { getPost, updatePost, imageUrl } from '../api/posts'
 import { fileToBase64 } from '../lib/files'
+import { authState } from '../stores/auth'
 
+const route = useRoute()
 const router = useRouter()
+const postId = Number(route.params.id)
+
 const form = reactive({ content: '' })
 const fieldErrors = reactive({})
 const apiError = ref('')
 const submitting = ref(false)
+const loading = ref(true)
 
 const images = ref([])
 const previewIndex = ref(0)
+
+async function load() {
+  try {
+    const post = await getPost(postId)
+    if (post.authorId !== authState.user.id) {
+      router.replace({ name: 'feed' })
+      return
+    }
+    form.content = post.content
+    images.value = post.images.map((img) => ({
+      kind: 'existing',
+      id: img.id,
+      previewUrl: imageUrl(img.id),
+    }))
+  } catch (err) {
+    apiError.value = err.message
+  } finally {
+    loading.value = false
+  }
+}
+load()
 
 function onFileChange(event) {
   const picked = Array.from(event.target.files)
@@ -24,7 +50,7 @@ function onFileChange(event) {
 
   previewIndex.value = images.value.length
   for (const file of picked) {
-    images.value.push({ file, previewUrl: URL.createObjectURL(file) })
+    images.value.push({ kind: 'new', file, previewUrl: URL.createObjectURL(file) })
   }
 }
 
@@ -58,16 +84,19 @@ async function onSubmit() {
   if (!validate()) return
   submitting.value = true
   try {
-    const imagePayload = await Promise.all(
-      images.value.map(async ({ file }) => ({
-        storageKey: file.name,
-        contentType: file.type,
-        data: await fileToBase64(file),
-        filter: 'NONE',
-      })),
+    const keepImageIds = images.value.filter((i) => i.kind === 'existing').map((i) => i.id)
+    const newImages = await Promise.all(
+      images.value
+        .filter((i) => i.kind === 'new')
+        .map(async ({ file }) => ({
+          storageKey: file.name,
+          contentType: file.type,
+          data: await fileToBase64(file),
+          filter: 'NONE',
+        })),
     )
-    await createPost(form.content, imagePayload)
-    router.push({ name: 'feed' })
+    await updatePost(postId, form.content, keepImageIds, newImages)
+    router.back()
   } catch (err) {
     apiError.value = err.message
   } finally {
@@ -77,8 +106,8 @@ async function onSubmit() {
 </script>
 
 <template>
-  <form class="auth-form" @submit.prevent="onSubmit">
-    <h1>New post</h1>
+  <form v-if="!loading" class="auth-form" @submit.prevent="onSubmit">
+    <h1>Edit post</h1>
     <p v-if="apiError" class="error-banner">{{ apiError }}</p>
 
     <label>
@@ -103,6 +132,9 @@ async function onSubmit() {
       </template>
     </div>
 
-    <button type="submit" :disabled="submitting">Post</button>
+    <div class="post-actions">
+      <button type="submit" :disabled="submitting">Save</button>
+      <button type="button" @click="router.back()">Cancel</button>
+    </div>
   </form>
 </template>

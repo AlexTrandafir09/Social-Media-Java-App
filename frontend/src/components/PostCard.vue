@@ -1,10 +1,11 @@
 <script setup>
 import { ref } from 'vue'
-import { updatePost, deletePost, imageUrl } from '../api/posts'
+import { deletePost, imageUrl } from '../api/posts'
 import { getComments, createComment, updateComment, deleteComment } from '../api/comments'
 import { likePost, unlikePost, getLikesForPost, countLikes } from '../api/likes'
 import { authState } from '../stores/auth'
 import UserChip from './UserChip.vue'
+import Modal from './Modal.vue'
 
 const props = defineProps({
   post: { type: Object, required: true },
@@ -14,8 +15,13 @@ const emit = defineEmits(['deleted'])
 const post = ref(props.post)
 const apiError = ref('')
 
-const editingPost = ref(false)
-const editContent = ref('')
+const imageIndex = ref(0)
+function prevImage() {
+  if (imageIndex.value > 0) imageIndex.value--
+}
+function nextImage() {
+  if (imageIndex.value < post.value.images.length - 1) imageIndex.value++
+}
 
 const likeCount = ref(0)
 const iLiked = ref(false)
@@ -24,13 +30,53 @@ getLikesForPost(post.value.id).then((likes) => {
   iLiked.value = likes.some((l) => l.userId === authState.user.id)
 })
 
-const showComments = ref(false)
-const commentCount = ref(null)
-const comments = ref([])
+const totalComments = ref(0)
+
+const showCommentsModal = ref(false)
+const modalComments = ref([])
+const modalPage = ref(0)
+const modalHasMore = ref(true)
+
 const newComment = ref('')
 const commentError = ref('')
 const editingCommentId = ref(null)
 const editingCommentContent = ref('')
+
+async function loadCommentCount() {
+  try {
+    const page = await getComments(post.value.id, 0)
+    totalComments.value = page.totalElements
+  } catch (err) {
+    apiError.value = err.message
+  }
+}
+loadCommentCount()
+
+async function openCommentsModal() {
+  showCommentsModal.value = true
+  modalComments.value = []
+  modalPage.value = 0
+  modalHasMore.value = true
+  await loadMoreModalComments()
+}
+
+async function loadMoreModalComments() {
+  try {
+    const page = await getComments(post.value.id, modalPage.value)
+    modalComments.value = modalComments.value.concat(page.content)
+    modalHasMore.value = !page.last
+    modalPage.value++
+  } catch (err) {
+    apiError.value = err.message
+  }
+}
+
+async function refreshComments() {
+  await loadCommentCount()
+  if (showCommentsModal.value) {
+    await openCommentsModal()
+  }
+}
 
 async function toggleLike() {
   try {
@@ -47,20 +93,6 @@ async function toggleLike() {
   }
 }
 
-function startEditPost() {
-  editContent.value = post.value.content
-  editingPost.value = true
-}
-
-async function saveEditPost() {
-  try {
-    post.value = await updatePost(post.value.id, editContent.value)
-    editingPost.value = false
-  } catch (err) {
-    apiError.value = err.message
-  }
-}
-
 async function removePost() {
   try {
     await deletePost(post.value.id)
@@ -70,29 +102,13 @@ async function removePost() {
   }
 }
 
-async function loadComments() {
-  try {
-    comments.value = (await getComments(post.value.id)).content
-    commentCount.value = comments.value.length
-  } catch (err) {
-    apiError.value = err.message
-  }
-}
-
-async function toggleComments() {
-  showComments.value = !showComments.value
-  if (showComments.value && comments.value.length === 0) {
-    await loadComments()
-  }
-}
-
 async function submitComment() {
   commentError.value = newComment.value.length === 0 ? 'Comment cannot be empty' : ''
   if (commentError.value) return
   try {
     await createComment(post.value.id, newComment.value)
     newComment.value = ''
-    await loadComments()
+    await refreshComments()
   } catch (err) {
     commentError.value = err.message
   }
@@ -107,7 +123,7 @@ async function saveEditComment(id) {
   try {
     await updateComment(id, editingCommentContent.value)
     editingCommentId.value = null
-    await loadComments()
+    await refreshComments()
   } catch (err) {
     apiError.value = err.message
   }
@@ -116,8 +132,7 @@ async function saveEditComment(id) {
 async function removeComment(id) {
   try {
     await deleteComment(id)
-    comments.value = comments.value.filter((c) => c.id !== id)
-    commentCount.value = comments.value.length
+    await refreshComments()
   } catch (err) {
     apiError.value = err.message
   }
@@ -135,19 +150,19 @@ function formatDate(iso) {
       &middot; {{ formatDate(post.createdAt) }}
     </p>
 
-    <template v-if="editingPost">
-      <textarea v-model="editContent" rows="4"></textarea>
-      <button @click="saveEditPost">Save</button>
-      <button @click="editingPost = false">Cancel</button>
-    </template>
-    <p v-else class="post-content">{{ post.content }}</p>
+    <p class="post-content">{{ post.content }}</p>
 
     <div v-if="post.images?.length" class="post-images">
-      <img v-for="img in post.images" :key="img.id" :src="imageUrl(img.id)" :alt="img.storageKey" />
+      <img :src="imageUrl(post.images[imageIndex].id)" :alt="post.images[imageIndex].storageKey" />
+      <template v-if="post.images.length > 1">
+        <button type="button" class="slideshow-nav slideshow-prev" :disabled="imageIndex === 0" @click="prevImage">&lsaquo;</button>
+        <button type="button" class="slideshow-nav slideshow-next" :disabled="imageIndex === post.images.length - 1" @click="nextImage">&rsaquo;</button>
+        <span class="slideshow-count">{{ imageIndex + 1 }} / {{ post.images.length }}</span>
+      </template>
     </div>
 
-    <div v-if="post.authorId === authState.user.id && !editingPost" class="post-actions">
-      <button @click="startEditPost">Edit</button>
+    <div v-if="post.authorId === authState.user.id" class="post-actions">
+      <router-link :to="{ name: 'edit-post', params: { id: post.id } }">Edit</router-link>
       <button @click="removePost">Delete</button>
     </div>
 
@@ -156,14 +171,15 @@ function formatDate(iso) {
     <div class="like-row">
       <button @click="toggleLike">{{ iLiked ? 'Unlike' : 'Like' }}</button>
       <span>{{ likeCount }} like{{ likeCount === 1 ? '' : 's' }}</span>
-      <button @click="toggleComments">
-        {{ showComments ? 'Hide comments' : `Comments${commentCount !== null ? ` (${commentCount})` : ''}` }}
-      </button>
     </div>
 
-    <template v-if="showComments">
+    <button class="view-comments-link" @click="openCommentsModal">
+      {{ totalComments > 0 ? `View comments (${totalComments})` : 'Add a comment' }}
+    </button>
+
+    <Modal v-if="showCommentsModal" title="Comments" @close="showCommentsModal = false">
       <ul class="comment-list">
-        <li v-for="comment in comments" :key="comment.id">
+        <li v-for="comment in modalComments" :key="comment.id">
           <p class="post-meta">
             <UserChip :user-id="comment.authorId" />
             &middot; {{ formatDate(comment.createdAt) }}
@@ -183,11 +199,13 @@ function formatDate(iso) {
         </li>
       </ul>
 
+      <button v-if="modalHasMore" @click="loadMoreModalComments">Load more</button>
+
       <form @submit.prevent="submitComment" class="comment-form">
         <textarea v-model="newComment" rows="2" placeholder="Add a comment..."></textarea>
         <p v-if="commentError" class="field-error">{{ commentError }}</p>
         <button type="submit">Comment</button>
       </form>
-    </template>
+    </Modal>
   </article>
 </template>

@@ -8,10 +8,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.Date;
 
-// content-service doesn't issue tokens - that's user-service's job. Integration
-// tests mint their own using the same test secret configured in
-// src/test/resources/application.properties, so they don't depend on a live
-// user-service to get a valid token.
 final class TestJwtSupport {
 
     private static final String TEST_SECRET = "test-only-jwt-signing-secret-that-is-at-least-32-bytes-long-1234567890";

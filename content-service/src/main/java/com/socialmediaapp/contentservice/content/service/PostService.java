@@ -1,6 +1,7 @@
 package com.socialmediaapp.contentservice.content.service;
 
 import com.socialmediaapp.contentservice.content.dto.PostCreateRequest;
+import com.socialmediaapp.contentservice.content.dto.PostImageInput;
 import com.socialmediaapp.contentservice.content.dto.PostUpdateRequest;
 import com.socialmediaapp.contentservice.content.entity.ImageFilter;
 import com.socialmediaapp.contentservice.content.entity.Post;
@@ -79,9 +80,6 @@ public class PostService {
         return postRepository.findAll(pageable);
     }
 
-    // authorIds narrows the feed to specific authors (e.g. "people I follow" -
-    // that list is resolved by the caller, since this service doesn't know
-    // about follow relationships).
     @Transactional(readOnly = true)
     public Page<Post> getPostsByAuthors(List<Long> authorIds, Pageable pageable) {
         return postRepository.findByAuthorIdIn(authorIds, pageable);
@@ -97,8 +95,40 @@ public class PostService {
         if (!SecurityUtils.isCurrentUserOrAdmin(post.getAuthorId())) {
             throw new AccessDeniedException("You can only edit your own posts");
         }
+
+        List<Long> keepIds = request.keepImageIds() != null ? request.keepImageIds() : List.of();
+        List<PostImageInput> newImageInputs = request.newImages() != null ? request.newImages() : List.of();
+        if (keepIds.isEmpty() && newImageInputs.isEmpty()) {
+            throw new PostMustHaveImageException();
+        }
+
+        List<PostImage> keptImages = new ArrayList<>();
+        for (PostImage existing : postImageRepository.findByPostId(id)) {
+            if (keepIds.contains(existing.getId())) {
+                keptImages.add(existing);
+            } else {
+                postImageRepository.deleteById(existing.getId());
+            }
+        }
+
+        List<PostImage> newImages = newImageInputs.stream()
+                .map(img -> PostImage.builder()
+                        .post(post)
+                        .storageKey(img.storageKey())
+                        .contentType(img.contentType())
+                        .data(Base64.getDecoder().decode(img.data()))
+                        .activeFilter(img.filter() != null ? img.filter() : ImageFilter.NONE)
+                        .build())
+                .collect(Collectors.toCollection(ArrayList::new));
+        if (!newImages.isEmpty()) {
+            postImageRepository.saveAll(newImages);
+        }
+
         post.setContent(request.content());
         Post saved = postRepository.save(post);
+        keptImages.addAll(newImages);
+        saved.setImages(keptImages);
+
         activityEventPublisher.publish(new ActivityEvent(post.getAuthorId(), ActivityAction.POST_UPDATED, "Post updated: " + id));
         log.info("Post updated: id={}", id);
         return saved;

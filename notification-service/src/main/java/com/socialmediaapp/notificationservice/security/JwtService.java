@@ -10,9 +10,6 @@ import org.springframework.stereotype.Service;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 
-// Validation only - this service doesn't issue tokens, that stays with the
-// service that owns Users/Auth. It trusts the same signing secret so tokens
-// issued elsewhere verify here without a network call.
 @Service
 public class JwtService {
 

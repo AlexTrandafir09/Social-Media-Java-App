@@ -67,9 +67,6 @@ public class NotificationService {
         log.debug("Notification deleted: id={}", id);
     }
 
-    // No SecurityUtils check here: this is invoked from the RabbitMQ listener,
-    // not an HTTP request, so there's no authenticated caller to check against.
-    // The event is trusted - whoever published it already decided this notification should exist.
     public void createFromEvent(NotificationEvent event) {
         Notification notification = Notification.builder()
                 .recipientId(event.recipientId())

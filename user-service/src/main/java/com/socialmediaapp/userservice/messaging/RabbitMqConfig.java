@@ -7,10 +7,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 
-// This service only publishes - the queue and binding for this exchange are
-// declared by activity-log-service, the service that actually consumes it.
-// Declaring the exchange here too (idempotent, same name/type/durability)
-// means publishing works regardless of which service starts first.
 @Configuration
 public class RabbitMqConfig {
 

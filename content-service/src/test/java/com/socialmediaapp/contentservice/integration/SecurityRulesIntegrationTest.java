@@ -41,17 +41,18 @@ class SecurityRulesIntegrationTest {
                         .content("{\"content\":\"alice's post\",\"images\":[{\"storageKey\":\"a.png\",\"contentType\":\"image/png\",\"data\":\"dGVzdC1pbWFnZS1ieXRlcw==\"}]}"))
                 .andReturn().getResponse().getContentAsString();
         Long postId = Long.valueOf(postBody.split("\"id\":")[1].split(",")[0]);
+        Long imageId = Long.valueOf(postBody.split("\"images\":\\[\\{\"id\":")[1].split(",")[0]);
 
         mockMvc.perform(put("/api/posts/" + postId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + bobToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"content\":\"hacked\"}"))
+                        .content("{\"content\":\"hacked\",\"keepImageIds\":[" + imageId + "]}"))
                 .andExpect(status().isForbidden());
 
         mockMvc.perform(put("/api/posts/" + postId)
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + aliceToken)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"content\":\"edited by owner\"}"))
+                        .content("{\"content\":\"edited by owner\",\"keepImageIds\":[" + imageId + "]}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content").value("edited by owner"));
     }

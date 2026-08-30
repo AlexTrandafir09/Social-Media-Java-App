@@ -20,9 +20,6 @@ public class ActivityLogService {
 
     private final ActivityLogRepository activityLogRepository;
 
-    // No SecurityUtils check here: this is invoked from the RabbitMQ listener,
-    // not an HTTP request, so there's no authenticated caller to check against.
-    // The event is trusted - whoever published it already decided this entry should exist.
     public void recordFromEvent(ActivityEvent event) {
         ActivityLog entry = ActivityLog.builder()
                 .actorId(event.actorId())

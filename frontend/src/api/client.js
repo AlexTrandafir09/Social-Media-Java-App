@@ -21,7 +21,6 @@ async function parseErrorMessage(response) {
   if (body.message) {
     return body.message
   }
-  // Bean Validation errors come back as a flat { field: "message" } map
   const fieldErrors = Object.entries(body).map(([field, msg]) => `${field}: ${msg}`)
   if (fieldErrors.length > 0) {
     return fieldErrors.join(', ')
@@ -39,7 +38,7 @@ export async function apiFetch(path, { method = 'GET', body, auth = true } = {})
   const response = await fetch(`${BASE_URL}${path}`, {
     method,
     headers,
-    credentials: 'include', // send/receive the httpOnly refresh-token cookie
+    credentials: 'include',
     body: body !== undefined ? JSON.stringify(body) : undefined,
   })
 

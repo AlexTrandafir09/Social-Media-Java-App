@@ -9,7 +9,6 @@ async function onLogout() {
   try {
     await logout()
   } catch {
-    // Even if the server call fails, still clear the local session.
   }
   clearSession()
   router.push({ name: 'login' })

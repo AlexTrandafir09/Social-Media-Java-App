@@ -1,7 +1,7 @@
 import { apiFetch } from './client'
 
-export function getComments(postId, page = 0) {
-  return apiFetch(`/api/comments/post/${postId}?page=${page}&size=20&sort=createdAt,asc`)
+export function getComments(postId, page = 0, size = 5) {
+  return apiFetch(`/api/comments/post/${postId}?page=${page}&size=${size}&sort=createdAt,desc`)
 }
 
 export function createComment(postId, content) {

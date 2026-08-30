@@ -21,10 +21,6 @@ public class UserPreferenceController {
 
     private final UserPreferenceService userPreferenceService;
 
-    // Ownership check lives here rather than in UserPreferenceService.getByUserId,
-    // because that method also has a legitimate internal caller (used when other
-    // services would look up preferences) that must not be blocked by the
-    // HTTP-request-only authorization check.
     @GetMapping
     public UserPreference getPreferences(@PathVariable Long userId) {
         if (!SecurityUtils.isCurrentUserOrAdmin(userId)) {
