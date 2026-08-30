@@ -104,9 +104,10 @@ async function toggleFollow() {
       </ul>
     </Modal>
 
-    <button v-if="!isOwnProfile" @click="toggleFollow">{{ isFollowing ? 'Unfollow' : 'Follow' }}</button>
+    <button v-if="!isOwnProfile" class="button-primary" @click="toggleFollow">{{ isFollowing ? 'Unfollow' : 'Follow' }}</button>
 
     <h2>Posts</h2>
+    <p v-if="posts.length === 0">No posts.</p>
     <PostCard v-for="post in posts" :key="post.id" :post="post" @deleted="onPostDeleted" />
   </div>
 </template>

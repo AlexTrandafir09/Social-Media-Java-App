@@ -35,12 +35,17 @@ export async function apiFetch(path, { method = 'GET', body, auth = true } = {})
     if (token) headers.Authorization = `Bearer ${token}`
   }
 
-  const response = await fetch(`${BASE_URL}${path}`, {
-    method,
-    headers,
-    credentials: 'include',
-    body: body !== undefined ? JSON.stringify(body) : undefined,
-  })
+  let response
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      method,
+      headers,
+      credentials: 'include',
+      body: body !== undefined ? JSON.stringify(body) : undefined,
+    })
+  } catch {
+    throw new ApiError('Could not reach the server. Check your connection and try again.', 0)
+  }
 
   if (!response.ok) {
     throw new ApiError(await parseErrorMessage(response), response.status)

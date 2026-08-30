@@ -125,12 +125,27 @@ class UserServiceTest {
     }
 
     @Test
-    void getAllUsers_returnsAllUsers() {
-        when(userRepository.findAll()).thenReturn(List.of(user));
+    void searchUsers_returnsMatchingUsers() {
+        when(userRepository.findByUsernameContainingIgnoreCase("ali")).thenReturn(List.of(user));
 
-        List<User> users = userService.getAllUsers();
+        List<User> users = userService.searchUsers("ali");
 
         assertThat(users).containsExactly(user);
+    }
+
+    @Test
+    void searchUsers_returnsEmptyListWhenQueryBlank() {
+        List<User> users = userService.searchUsers("  ");
+
+        assertThat(users).isEmpty();
+        verify(userRepository, never()).findByUsernameContainingIgnoreCase(any());
+    }
+
+    @Test
+    void searchUsers_returnsEmptyListWhenQueryNull() {
+        List<User> users = userService.searchUsers(null);
+
+        assertThat(users).isEmpty();
     }
 
     @Test

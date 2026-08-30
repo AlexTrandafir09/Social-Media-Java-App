@@ -4,8 +4,8 @@ export function getUser(id) {
   return apiFetch(`/api/users/${id}`)
 }
 
-export function getAllUsers() {
-  return apiFetch('/api/users')
+export function searchUsers(query) {
+  return apiFetch(`/api/users?search=${encodeURIComponent(query)}`)
 }
 
 export function updateUser(id, bio) {

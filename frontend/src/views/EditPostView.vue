@@ -132,9 +132,9 @@ async function onSubmit() {
       </template>
     </div>
 
-    <div class="post-actions">
+    <div class="form-actions">
       <button type="submit" :disabled="submitting">Save</button>
-      <button type="button" @click="router.back()">Cancel</button>
+      <button type="button" class="button-secondary" @click="router.back()">Cancel</button>
     </div>
   </form>
 </template>

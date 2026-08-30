@@ -60,6 +60,6 @@ async function onSubmit() {
     <p v-if="fieldErrors.password" class="field-error">{{ fieldErrors.password }}</p>
 
     <button type="submit" :disabled="submitting">Create account</button>
-    <router-link to="/login">Already have an account? Log in</router-link>
+    <router-link to="/login" class="auth-link">Already have an account? Log in</router-link>
   </form>
 </template>

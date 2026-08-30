@@ -54,8 +54,11 @@ public class UserService {
     }
 
     @Transactional(readOnly = true)
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<User> searchUsers(String query) {
+        if (query == null || query.isBlank()) {
+            return List.of();
+        }
+        return userRepository.findByUsernameContainingIgnoreCase(query.trim());
     }
 
     public User updateUser(Long id, User updates) {

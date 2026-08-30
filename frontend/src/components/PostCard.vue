@@ -6,6 +6,7 @@ import { likePost, unlikePost, getLikesForPost, countLikes } from '../api/likes'
 import { authState } from '../stores/auth'
 import UserChip from './UserChip.vue'
 import Modal from './Modal.vue'
+import Icon from './Icon.vue'
 
 const props = defineProps({
   post: { type: Object, required: true },
@@ -145,12 +146,15 @@ function formatDate(iso) {
 
 <template>
   <article class="post-card">
+    <div v-if="post.authorId === authState.user.id" class="post-actions-top">
+      <router-link :to="{ name: 'edit-post', params: { id: post.id } }" class="icon-button" title="Edit" aria-label="Edit"><Icon name="edit" /></router-link>
+      <button class="icon-button danger" title="Delete" aria-label="Delete" @click="removePost"><Icon name="trash" /></button>
+    </div>
+
     <p class="post-meta">
       <UserChip :user-id="post.authorId" />
       &middot; {{ formatDate(post.createdAt) }}
     </p>
-
-    <p class="post-content">{{ post.content }}</p>
 
     <div v-if="post.images?.length" class="post-images">
       <img :src="imageUrl(post.images[imageIndex].id)" :alt="post.images[imageIndex].storageKey" />
@@ -161,15 +165,14 @@ function formatDate(iso) {
       </template>
     </div>
 
-    <div v-if="post.authorId === authState.user.id" class="post-actions">
-      <router-link :to="{ name: 'edit-post', params: { id: post.id } }">Edit</router-link>
-      <button @click="removePost">Delete</button>
-    </div>
+    <p class="post-content">{{ post.content }}</p>
 
     <p v-if="apiError" class="error-banner">{{ apiError }}</p>
 
     <div class="like-row">
-      <button @click="toggleLike">{{ iLiked ? 'Unlike' : 'Like' }}</button>
+      <button class="like-button" :class="{ liked: iLiked }" :title="iLiked ? 'Unlike' : 'Like'" :aria-label="iLiked ? 'Unlike' : 'Like'" @click="toggleLike">
+        <Icon name="thumbs-up" :filled="iLiked" />
+      </button>
       <span>{{ likeCount }} like{{ likeCount === 1 ? '' : 's' }}</span>
     </div>
 
@@ -180,31 +183,34 @@ function formatDate(iso) {
     <Modal v-if="showCommentsModal" title="Comments" @close="showCommentsModal = false">
       <ul class="comment-list">
         <li v-for="comment in modalComments" :key="comment.id">
+          <div v-if="comment.authorId === authState.user.id && editingCommentId !== comment.id" class="post-actions-top">
+            <button class="icon-button" title="Edit" aria-label="Edit" @click="startEditComment(comment)"><Icon name="edit" /></button>
+            <button class="icon-button danger" title="Delete" aria-label="Delete" @click="removeComment(comment.id)"><Icon name="trash" /></button>
+          </div>
+
           <p class="post-meta">
             <UserChip :user-id="comment.authorId" />
             &middot; {{ formatDate(comment.createdAt) }}
           </p>
-          <template v-if="editingCommentId === comment.id">
+          <div v-if="editingCommentId === comment.id" class="comment-form">
             <textarea v-model="editingCommentContent" rows="2"></textarea>
-            <button @click="saveEditComment(comment.id)">Save</button>
-            <button @click="editingCommentId = null">Cancel</button>
-          </template>
+            <div class="edit-comment-actions">
+              <button class="button-secondary" @click="saveEditComment(comment.id)">Save</button>
+              <button class="button-secondary" @click="editingCommentId = null">Cancel</button>
+            </div>
+          </div>
           <template v-else>
             <p>{{ comment.content }}</p>
-            <div v-if="comment.authorId === authState.user.id" class="post-actions">
-              <button @click="startEditComment(comment)">Edit</button>
-              <button @click="removeComment(comment.id)">Delete</button>
-            </div>
           </template>
         </li>
       </ul>
 
-      <button v-if="modalHasMore" @click="loadMoreModalComments">Load more</button>
+      <button v-if="modalHasMore" class="button-secondary" @click="loadMoreModalComments">Load more</button>
 
       <form @submit.prevent="submitComment" class="comment-form">
         <textarea v-model="newComment" rows="2" placeholder="Add a comment..."></textarea>
         <p v-if="commentError" class="field-error">{{ commentError }}</p>
-        <button type="submit">Comment</button>
+        <button type="submit" class="button-primary">Comment</button>
       </form>
     </Modal>
   </article>

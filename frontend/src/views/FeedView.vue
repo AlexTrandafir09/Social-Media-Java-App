@@ -71,10 +71,7 @@ onUnmounted(() => {
 
 <template>
   <div class="feed">
-    <div class="feed-header">
-      <h1>Feed</h1>
-      <router-link to="/posts/new" class="button-link">New post</router-link>
-    </div>
+    <h1>Feed</h1>
 
     <p v-if="apiError" class="error-banner">{{ apiError }}</p>
     <p v-else-if="loading">Loading...</p>
